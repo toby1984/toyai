@@ -1,8 +1,6 @@
-package de.codesourcery.toyai.ticklisteners;
+package de.codesourcery.toyai;
 
 import com.badlogic.gdx.math.Vector2;
-
-import de.codesourcery.toyai.Entity;
 
 public class MoveableEntity extends Entity 
 {

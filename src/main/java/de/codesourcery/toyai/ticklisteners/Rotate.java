@@ -4,17 +4,18 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
 import de.codesourcery.toyai.Entity;
-import de.codesourcery.toyai.ITickListener;
+import de.codesourcery.toyai.IBehaviour;
 import de.codesourcery.toyai.Misc;
 
-public class Rotate implements ITickListener {
+public class Rotate implements IBehaviour {
 
-    private static final double EPSILON_ANGLE = (2*Math.PI)/360; // 1°
+    private static final double EPSILON_ANGLE = 0.5*((2*Math.PI)/360); // 0.5°
     
     private final Entity entity;
     private float desiredAngleRad;
     private final Vector3 tmp = new Vector3();
-    public boolean orientationReached = false;
+    
+    private float elapsedTime = 0;
     
     public Rotate(Entity entity,Vector2 desiredHeading) 
     {
@@ -25,25 +26,38 @@ public class Rotate implements ITickListener {
     public void setDesiredHeading(Vector2 desiredHeading) 
     {
         this.desiredAngleRad = Misc.angleY( desiredHeading  );
-        orientationReached = false;
+    }
+    
+    @Override
+    public String toString() {
+        return "Rotate to "+Math.toDegrees( desiredAngleRad )+" degrees";
     }
     
     public static boolean isOrientedTowards(Entity entity , Vector2 desiredHeading) 
     {
-        final float currentAngleRad = Misc.angleY( entity.orientation );
+        final float currentAngleRad = Misc.angleY( entity.getOrientation() );
         final float desiredAngleRad = Misc.angleY( desiredHeading  );
         float deltaAngleRad = desiredAngleRad - currentAngleRad;
         return Math.abs( deltaAngleRad ) <= EPSILON_ANGLE; 
     }
     
     @Override
-    public boolean tick(float deltaSeconds) 
+    public Result tick(float deltaSeconds) 
     {
-        float currentAngleRad = Misc.angleY( entity.orientation );
+        final Vector2 orientation = entity.getOrientation();
+        float currentAngleRad = Misc.angleY( orientation );
         float deltaAngleRad = desiredAngleRad - currentAngleRad;
         
         if ( Math.abs( deltaAngleRad ) > EPSILON_ANGLE ) // delta > 1° 
         {
+            elapsedTime += deltaAngleRad;
+            
+            if ( elapsedTime > 4 ) 
+            {
+                System.err.println("Rotating failed after "+elapsedTime+" seconds");
+                return Result.FAILURE;
+            }
+            
             // determine direction to turn, always preferring
             // the smaller turn angle
             final float d1;
@@ -57,18 +71,17 @@ public class Rotate implements ITickListener {
                 d1 = (float) (2*Math.PI - d2);                
             }
             
-            tmp.set( entity.orientation.x , entity.orientation.y , 0 );
+            tmp.set( orientation.x , orientation.y , 0 );
             if ( d1 < d2 ) {
                 tmp.rotateRad( Misc.Z_AXIS3 , Entity.ROT_RAD_PER_SECOND*deltaSeconds );
             } else {
                 tmp.rotateRad( Misc.Z_AXIS3 , -Entity.ROT_RAD_PER_SECOND*deltaSeconds );
             }
-            tmp.nor();
-            entity.orientation.set( tmp.x , tmp.y );
-            return true;
+            System.out.println("Rotating "+entity.id);
+            entity.setOrientation( tmp.x , tmp.y );
+            return Result.PENDING;
         }
         System.out.println("Orientation reached.");
-        orientationReached = true;
-        return false;
+        return Result.SUCCESS;
     }    
 }

@@ -6,6 +6,8 @@ import java.util.function.Consumer;
 
 import javax.swing.Timer;
 
+import de.codesourcery.toyai.ticklisteners.SeekAndDestroy;
+
 public class Main 
 {
 
@@ -30,14 +32,16 @@ public class Main
         
         for ( int i = 0 ; i < 10 ; i++ ) 
         {
-            final Entity e1 = new Tank( team1 );
+            final Tank e1 = new Tank( team1 );
+            e1.setBehaviour( new SeekAndDestroy( world , e1 ) );
             do { 
                 setRandomPosition.accept( e1 );
             } while ( world.collidesWith( e1 ) );
             team1.add( e1 );
             world.add( e1 );
             
-            final Entity e2 = new Tank(team2 );
+            final Tank e2 = new Tank(team2 );
+            e2.setBehaviour( new SeekAndDestroy( world , e2 ) );
             do {
                 setRandomPosition.accept( e2 );
             } while ( world.collidesWith( e2 ) );
@@ -53,6 +57,7 @@ public class Main
         timer.start();
     }
     
+    @SuppressWarnings("unused")
     private static float t = 0.0f;
     private static final float STEP_TIME_SECONDS = 0.01f;
     private static float previousTime = System.nanoTime();

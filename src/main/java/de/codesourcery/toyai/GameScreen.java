@@ -17,7 +17,6 @@ import com.badlogic.gdx.math.Vector3;
 
 import de.codesourcery.toyai.Entity.EntityType;
 import de.codesourcery.toyai.ticklisteners.MoveTo;
-import de.codesourcery.toyai.ticklisteners.MoveableEntity;
 import de.codesourcery.toyai.ticklisteners.ShootAt;
 
 public class GameScreen extends JFrame {
@@ -46,6 +45,7 @@ public class GameScreen extends JFrame {
         private Entity highlighted = null;
         private Entity selected = null;
         
+        @SuppressWarnings("unused")
         private MoveTo animator = null;
         private Vector2 destination = null;
         
@@ -70,7 +70,7 @@ public class GameScreen extends JFrame {
                         destination = screenToModel( e.getPoint() );
                         
                         final Tank tank = (Tank) selected;
-                        world.tickContainer().add( new ShootAt( world , tank , destination ) );
+                        selected.setBehaviour( new ShootAt( world , tank , destination ) ) ;
                     } 
                     else if ( e.getButton() == MouseEvent.BUTTON3 ) 
                     {
@@ -79,13 +79,7 @@ public class GameScreen extends JFrame {
                     else if ( selected != null && selected.type.canMove() && e.getButton() == MouseEvent.BUTTON1 ) 
                     {
                         destination = screenToModel( e.getPoint() );
-                        
-                        if ( animator != null && ! animator.destinationReached ) 
-                        {
-                            world.tickContainer().remove( animator );
-                        }                        
-                        animator = new MoveTo( (MoveableEntity) selected , destination);
-                        world.tickContainer().add( animator );
+                        selected.setBehaviour( new MoveTo( (MoveableEntity) selected , destination) );
                     }
                 };
             };
@@ -139,7 +133,7 @@ public class GameScreen extends JFrame {
         
         private void renderTank(Tank entity,Graphics2D gfx) 
         {
-            final float angleRad = Misc.angleY( entity.orientation );
+            final float angleRad = Misc.angleY( entity.getOrientation() );
 
             final Vector3 corner0 = new Vector3( -entity.width/2 , entity.height/2 , 0 );
             final Vector3 corner1 = new Vector3(  entity.width/2 , entity.height/2 , 0 );

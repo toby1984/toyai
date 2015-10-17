@@ -3,41 +3,44 @@ package de.codesourcery.toyai;
 import com.badlogic.gdx.math.Vector2;
 
 import de.codesourcery.toyai.ticklisteners.Animator;
-import de.codesourcery.toyai.ticklisteners.MoveableEntity;
 
 public class Bullet extends MoveableEntity implements ITickListener
 {
-    public final Vector2 initialPosition;
-    public float distanceRemaining;
+    public float timeRemaining;
     private final Animator animator;
+    public final float damage;
     
-    private final Vector2 previousPosition = new Vector2();
-    
-    public Bullet(Entity owner,Vector2 initialPosition,Vector2 heading,float maxRange,float velocity) 
+    public Bullet(Entity owner,Vector2 initialPosition,Vector2 heading,float maxRange,float velocity,float damage) 
     {
         super(EntityType.BULLET, owner);
+        
+        this.damage = damage;
+        
         super.position.set( initialPosition );
         
-        super.orientation.set( heading );
-        super.orientation.nor();
+        super.setOrientation( heading );
         
         super.boundsDirty = true;
         
-        this.initialPosition = new Vector2( initialPosition );
-        this.distanceRemaining = maxRange;
+        this.timeRemaining = maxRange/velocity;
         
-        this.velocity.set( super.orientation );
+        this.velocity.set( super.getOrientation() );
         this.velocity.scl( velocity );
         
         this.animator = new Animator( this , velocity );
     }
 
     @Override
+    public void onCollision(World world, Entity collidingEntity) 
+    {
+        world.remove( this );
+    }
+    
+    @Override
     public boolean tick(float deltaSeconds) 
     {
-        previousPosition.set( position );
         animator.tick( deltaSeconds );
-        distanceRemaining -= position.dst( previousPosition );
-        return distanceRemaining > 0;
-    }
+        timeRemaining -= deltaSeconds;
+        return timeRemaining > 0;
+    }    
 }

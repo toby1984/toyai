@@ -3,8 +3,11 @@ package de.codesourcery.toyai;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.collision.BoundingBox;
 
-public class Entity 
+import de.codesourcery.toyai.IBehaviour.Result;
+
+public abstract class Entity implements ITickListener
 {
+    public static long ID_GENERATOR = 0;
     public static enum EntityType 
     {
         TANK 
@@ -30,17 +33,22 @@ public class Entity
         }        
     }
     
-    public static final float ROT_DEG_PER_SECOND = 45f;
+    public static final float ROT_DEG_PER_SECOND = 60f;
     public static final float ROT_RAD_PER_SECOND = (float) Math.toRadians( ROT_DEG_PER_SECOND );
     
-    public static final float MAX_VELOCITY = 60f;
+    public static final float MAX_VELOCITY = 40f;
     
-    public static final float MAX_ACCELERATION = 20f;
+    public static final float MAX_ACCELERATION = 80f;
+    public static final float MAX_DECELARATION = 160f;
     public static final float MAX_ACCELERATION_SQUARED = MAX_ACCELERATION*MAX_ACCELERATION;    
+    
+    public final long id = ID_GENERATOR++;
+    
+    private IBehaviour behaviour = IBehaviour.NOP;
     
     public final Vector2 position = new Vector2();
     
-    public final Vector2 orientation = new Vector2(0f,1f).nor();
+    private final Vector2 orientation = new Vector2(0f,1f).nor();
     
     public boolean boundsDirty = true;
     
@@ -57,6 +65,18 @@ public class Entity
         this.owner = owner;
         this.width = 10;
         this.height = 10;
+    }
+    
+    public Vector2 getOrientation() {
+        return orientation;
+    }
+    
+    public void setOrientation(float x,float y) {
+        this.orientation.set( x,y).nor();
+    }    
+    
+    public void setOrientation(Vector2 v) {
+        this.orientation.set( v ).nor();
     }
     
     public final float dst(Vector2 p) {
@@ -87,8 +107,12 @@ public class Entity
     }
     
     @Override
-    public String toString() {
-        return "Entity: "+type+" , owner: "+owner+" , bounds: "+getBounds().min+" - "+getBounds().max;
+    public String toString() 
+    {
+        if ( owner != null ) {
+            return "Entity #"+id+": "+type+" , owner: "+owner.id+", behaviour: "+behaviour;
+        }
+        return "Entity #"+id+": "+type+" , owner: NULL, behaviour: "+behaviour;
     }
     
     public boolean isMoving() 
@@ -109,5 +133,41 @@ public class Entity
             return this;
         }
         return owner.getRootOwner();
+    }
+
+    @Override
+    public boolean tick(float deltaSeconds) 
+    {
+        if ( behaviour.tick( deltaSeconds ) != Result.PENDING ) {
+            behaviour = IBehaviour.NOP;
+        }
+        tickHook( deltaSeconds );
+        return true;
+    }
+    
+    protected void tickHook(float deltaSeconds) {
+        
+    }
+    
+    public void setBehaviour(IBehaviour behaviour) 
+    {
+        if ( this.behaviour != behaviour ) {
+            this.behaviour.onCancel();
+        }
+        System.out.println("Setting behaviour "+behaviour+" on "+this);
+        this.behaviour = behaviour;
+    }
+    
+    public IBehaviour getBehaviour() {
+        return behaviour;
+    }
+    
+    public void onCollision(World world,Entity collidingEntity) 
+    {
+    }
+    
+    public final boolean hasType(Entity.EntityType t) 
+    {
+        return this.type == t;
     }
 }

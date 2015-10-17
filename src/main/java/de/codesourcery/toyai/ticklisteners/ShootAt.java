@@ -2,80 +2,79 @@ package de.codesourcery.toyai.ticklisteners;
 
 import com.badlogic.gdx.math.Vector2;
 
-import de.codesourcery.toyai.ITickListener;
+import de.codesourcery.toyai.IBehaviour;
 import de.codesourcery.toyai.Tank;
 import de.codesourcery.toyai.World;
 
-public class ShootAt implements ITickListener
+public class ShootAt implements IBehaviour
 {
     private final Tank entity;
+    private final IBehaviour wrapper;
     private final Vector2 target;
-    
-    private Rotate rotate = null;
-    private MoveTo moveTo = null;
-    
-    private final World world;
     
     public ShootAt(World world, Tank e,Vector2 target) 
     {
         this.entity = e;
         this.target = new Vector2(target);
-        this.world = world;
-    }
-
-    @Override
-    public boolean tick(float deltaSeconds) 
-    {
-        float distance = entity.dst( target );
-        if ( distance > entity.getEngagementDistance() ) 
-        {
-            // need to move closer
-            if ( moveTo == null ) {
-                Vector2 tmp = new Vector2( entity.position );
-                tmp.sub( target );
-                tmp.nor();
-                tmp.scl( entity.getEngagementDistance()*0.9f ); // fuzzyness of 0.9f because MoveTo isn't 100% accurate
-                tmp.add( target );
-                
-                moveTo = new MoveTo( entity , tmp ); 
-            }
-            if ( ! moveTo.destinationReached ) {
-                moveTo.tick(deltaSeconds);
-                return true;
-            }
-            moveTo = null;
-        }
+        
+        // need to move closer
+        final IBehaviour b1 = new MoveIntoRange( entity , target , entity.getEngagementDistance()*0.9f); // fuzzyness of 0.9f because MoveTo isn't 100% accurate
         
         // rotate towards target
-        Vector2 tmp = new Vector2( target );
-        tmp.sub( entity.position );
-        
-        if ( ! Rotate.isOrientedTowards( entity , tmp ) ) 
-        { 
-            if ( rotate == null ) 
-            {
-                final Vector2 targetVec = new Vector2(target);
-                targetVec.sub( entity.position );
-                rotate = new Rotate(entity,targetVec);
-            }
-            if ( ! rotate.orientationReached ) {
-                rotate.tick( deltaSeconds );
-                return true;
-            }
-            rotate = null;
-        }        
+        final Vector2 targetVec = new Vector2(target);
+        targetVec.sub( entity.position );
+        IBehaviour b2 = new Rotate(entity,targetVec);
         
         // shoot
-        if ( entity.isReadyToShoot() ) 
-        {
-            entity.fireShot( world , target );
-            return false;
-        }
-        return true;
+        final IBehaviour b3 = new IBehaviour() {
+            
+            private boolean shotFired = false;
+            
+            private float failureTime;
+            
+            @Override
+            public String toString() {
+                return "FireWhenReady";
+            }
+            
+            @Override
+            public Result tick(float deltaSeconds) 
+            {
+                if ( shotFired ) {
+                    return Result.SUCCESS;
+                }
+                if ( entity.isReadyToShoot() ) 
+                {
+                    System.out.println("Firing shot");
+                    entity.fireShot( world , target );
+                    shotFired = true;
+                    return Result.SUCCESS;
+                }
+                System.out.println(entity.id+" is waiting to fire...");
+                failureTime += deltaSeconds;
+                if ( failureTime > 3 ) 
+                {
+                    System.err.println(entity.id+" failed to fire for more than 3 seconds...");
+                    return Result.FAILURE;
+                }
+                return Result.PENDING;
+            }
+        };
+        wrapper = b1.andThen( b2 ).andThen( b3 );
     }
     
     @Override
-    public void onTickListenerRemove() {
-        entity.stopMoving();
+    public void onCancel() {
+        wrapper.onCancel();
+    }
+    
+    @Override
+    public String toString() {
+        return "Shoot @ "+target+" [ "+wrapper+" ]";
+    }
+    
+    @Override
+    public Result tick(float deltaSeconds) {
+        return wrapper.tick( deltaSeconds );
     }
 }
