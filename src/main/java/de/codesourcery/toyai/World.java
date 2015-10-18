@@ -8,14 +8,40 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 
+import de.codesourcery.toyai.entities.MoveableEntity;
+
 public class World implements ITickListener
 {
     private final List<Entity> entities = new ArrayList<>();
     private final TickContainer tickContainer = new TickContainer();
     
+    private final Kinematics physics = new Kinematics();
+    
+    public interface ICallbackWithResult<T> 
+    {
+        public boolean visit(Entity entity);
+        public T getResult();
+    }
+    
+    protected static final class CollisionPair 
+    {
+        public final Entity e1;
+        public final Entity e2;
+        
+        public CollisionPair(Entity e1, Entity e2) 
+        {
+            this.e1 = e1;
+            this.e2 = e2;
+        }
+    }
+    
     public void visitEntities(Consumer<Entity> consumer) 
     {
-        entities.forEach( consumer );
+        for (int i = 0 , len = entities.size() ; i < len ; i++) 
+        {
+            final Entity e = entities.get(i);
+            consumer.accept( e );
+        }
     }
     
     public TickContainer tickContainer() {
@@ -25,9 +51,10 @@ public class World implements ITickListener
     public void add(Entity e) 
     {
         entities.add( e );
-        if ( e instanceof ITickListener ) 
+        tickContainer.add( (ITickListener) e);
+        if ( e instanceof MoveableEntity) 
         {
-            tickContainer.add( (ITickListener) e);
+            physics.add( (MoveableEntity) e );
         }
     }
     
@@ -47,9 +74,9 @@ public class World implements ITickListener
         if ( entities.remove( e1 ) ) 
         {
             System.out.println( "REMOVED from world: "+e1);
-            if ( e1 instanceof ITickListener) 
-            {
-                tickContainer.remove( (ITickListener) e1 );
+            tickContainer.remove( (ITickListener) e1 );
+            if ( e1 instanceof MoveableEntity) {
+                physics.remove( (MoveableEntity) e1 );
             }
             e1.onRemoveFromWorld(this);
         }
@@ -57,8 +84,9 @@ public class World implements ITickListener
     
     public boolean collidesWith(Entity entity) 
     {
-        for ( Entity e : entities ) 
+        for (int i = 0 , len = entities.size() ; i < len ; i++) 
         {
+            final Entity e = entities.get(i);
             if ( e != entity && collide( e , entity ) ) {
                 return true;
             }
@@ -66,10 +94,21 @@ public class World implements ITickListener
         return false;
     }
     
+    private boolean collide(Entity e1,Entity e2) 
+    {
+        final BoundingBox b1 = e1.getBounds();
+        final BoundingBox b2 = e2.getBounds();
+        if ( ! b1.isValid() || ! b2.isValid() ) {
+            System.err.println("bb invalid");
+        }
+        return b1.intersects( b2 );
+    }    
+    
     public Entity getEntityAt(Vector2 position) 
     {
         final Vector3 tmp = new Vector3(position.x,position.y , 0 );
-        for ( Entity e : entities ) {
+        for (int i = 0 , len = entities.size() ; i < len ; i++) {
+            final Entity e = entities.get(i);
             if ( e.getBounds().contains( tmp ) ) {
                 return e;
             }
@@ -77,32 +116,16 @@ public class World implements ITickListener
         return null;
     }
     
-    private boolean collide(Entity e1,Entity e2) 
-    {
-        BoundingBox b1 = e1.getBounds();
-        BoundingBox b2 = e2.getBounds();
-        if ( ! b1.isValid() || ! b2.isValid() ) {
-            System.err.println("bb invalid");
-        }
-        return b1.intersects( b2 );
-    }
-    
-    protected static final class CollisionPair 
-    {
-        public final Entity e1;
-        public final Entity e2;
-        
-        public CollisionPair(Entity e1, Entity e2) {
-            this.e1 = e1;
-            this.e2 = e2;
-        }
-    }
-
     @Override
     public boolean tick(float deltaSeconds) 
     {
+        // tick entities etc.
         tickContainer.tick( deltaSeconds );
         
+        // run physics
+        physics.tick( deltaSeconds );
+        
+        // find collisions
         final List<CollisionPair> pair = new ArrayList<>( entities.size() / 2 );
         for ( int i = 0 ; i < entities.size() ; i++ ) 
         {
@@ -135,12 +158,6 @@ public class World implements ITickListener
                 visitor.accept( e );
             }
         }
-    }
-    
-    public interface ICallbackWithResult<T> 
-    {
-        public boolean visit(Entity entity);
-        public T getResult();
     }
     
     public <T> T visitNeighboursWithResult(Vector2 center,float radius,ICallbackWithResult<T> visitor) 

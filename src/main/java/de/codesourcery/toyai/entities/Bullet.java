@@ -1,18 +1,20 @@
-package de.codesourcery.toyai;
+package de.codesourcery.toyai.entities;
 
 import com.badlogic.gdx.math.Vector2;
 
-import de.codesourcery.toyai.ticklisteners.Animator;
+import de.codesourcery.toyai.Entity;
+import de.codesourcery.toyai.IBlackboard;
+import de.codesourcery.toyai.ITickListener;
+import de.codesourcery.toyai.World;
 
 public class Bullet extends MoveableEntity implements ITickListener
 {
     public float timeRemaining;
-    private final Animator animator;
     public final float damage;
     
-    public Bullet(Entity owner,Vector2 initialPosition,Vector2 heading,float maxRange,float velocity,float damage) 
+    public Bullet(Entity owner,Vector2 initialPosition,Vector2 heading,float maxRange,float velocity,float damage,IBlackboard bb) 
     {
-        super(EntityType.BULLET, owner);
+        super(EntityType.BULLET, owner,bb,velocity);
         
         this.damage = damage;
         
@@ -26,8 +28,6 @@ public class Bullet extends MoveableEntity implements ITickListener
         
         this.velocity.set( super.getOrientation() );
         this.velocity.scl( velocity );
-        
-        this.animator = new Animator( this , velocity );
     }
 
     @Override
@@ -37,9 +37,8 @@ public class Bullet extends MoveableEntity implements ITickListener
     }
     
     @Override
-    public boolean tick(float deltaSeconds) 
+    public boolean tickHook(float deltaSeconds) 
     {
-        animator.tick( deltaSeconds );
         timeRemaining -= deltaSeconds;
         return timeRemaining > 0;
     }    

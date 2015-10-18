@@ -16,8 +16,12 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
 import de.codesourcery.toyai.Entity.EntityType;
-import de.codesourcery.toyai.ticklisteners.MoveTo;
-import de.codesourcery.toyai.ticklisteners.ShootAt;
+import de.codesourcery.toyai.behaviours.MoveTo;
+import de.codesourcery.toyai.behaviours.Wander;
+import de.codesourcery.toyai.entities.Bullet;
+import de.codesourcery.toyai.entities.MoveableEntity;
+import de.codesourcery.toyai.entities.Player;
+import de.codesourcery.toyai.entities.Tank;
 
 public class GameScreen extends JFrame {
 
@@ -35,6 +39,18 @@ public class GameScreen extends JFrame {
         panel.setSize( new Dimension(MAX_X,MAX_Y ) );
         getContentPane().add( panel);
         pack();
+    }
+    
+    protected static final boolean isLeftButton(MouseEvent e) {
+        return e.getButton() == MouseEvent.BUTTON1;
+    }
+    
+    protected static final boolean isMiddleButton(MouseEvent e) {
+        return e.getButton() == MouseEvent.BUTTON2;
+    }
+    
+    protected static final boolean isRightButton(MouseEvent e) {
+        return e.getButton() == MouseEvent.BUTTON3;
     }
     
     protected final class MyPanel extends JPanel 
@@ -65,21 +81,24 @@ public class GameScreen extends JFrame {
                 
                 public void mouseReleased(java.awt.event.MouseEvent e) 
                 {
-                    if ( selected != null && selected.type == EntityType.TANK && e.getButton() == MouseEvent.BUTTON2 ) 
+                    if ( selected != null && selected.is( EntityType.TANK ) && isLeftButton( e) ) 
                     {
                         destination = screenToModel( e.getPoint() );
                         
-                        final Tank tank = (Tank) selected;
-                        selected.setBehaviour( new ShootAt( world , tank , destination ) ) ;
+                        selected.blackboard.put( "ui.target" , destination );
+//                        selected.setBehaviour( new ShootAt( (Tank) selected , "ui.target" ) );
+                        selected.setBehaviour( new Wander( (MoveableEntity) selected , 3f ) );
+//                        selected.setBehaviour( new AimAt( (MoveableEntity) selected , "ui.target") );
                     } 
-                    else if ( e.getButton() == MouseEvent.BUTTON3 ) 
+                    else if ( isRightButton( e ) ) 
                     {
                         selected = world.getEntityAt( screenToModel( e.getPoint() ));
                     } 
-                    else if ( selected != null && selected.type.canMove() && e.getButton() == MouseEvent.BUTTON1 ) 
+                    else if ( selected != null && selected.type.canMove() && isLeftButton( e ) ) 
                     {
                         destination = screenToModel( e.getPoint() );
-                        selected.setBehaviour( new MoveTo( (MoveableEntity) selected , destination) );
+                        selected.blackboard.put( "ui.target" , destination );
+                        selected.setBehaviour( new MoveTo( (MoveableEntity) selected , "ui.target" ) );
                     }
                 };
             };

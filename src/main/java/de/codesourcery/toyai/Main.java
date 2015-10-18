@@ -6,50 +6,49 @@ import java.util.function.Consumer;
 
 import javax.swing.Timer;
 
-import de.codesourcery.toyai.ticklisteners.SeekAndDestroy;
+import de.codesourcery.toyai.behaviours.SeekAndDestroy;
+import de.codesourcery.toyai.entities.Player;
+import de.codesourcery.toyai.entities.Tank;
 
 public class Main 
 {
-
     public static final float FPS = 60;
     
     public static void main(String[] args) 
     {
         final World world = new World();
         
-        final Player team1 =new Player("team #1",Color.RED);
-        final Player team2 =new Player("team #1",Color.BLUE);
+        final Player team1 =new Player("team #1",Color.RED,new Blackboard(world));
+        final Player team2 =new Player("team #1",Color.BLUE,new Blackboard(world));
         world.add(team1,team2);
         
-        final Random rnd = new Random(0xdeadbeef);
+        final Random rnd = new Random();
         
-        final int xLimit = (GameScreen.MAX_X-20)/2;
-        final int yLimit = (GameScreen.MAX_Y-20)/2;
+        final int xLimit = (GameScreen.MAX_X-40)/2;
+        final int yLimit = (GameScreen.MAX_Y-40)/2;
         
         final Consumer<Entity> setRandomPosition = e -> 
         {
-          e.position.x = -xLimit+ rnd.nextInt( xLimit );  
-          e.position.y = -yLimit + rnd.nextInt( yLimit);  
+          e.position.x = -xLimit+ rnd.nextInt( 2*xLimit );  
+          e.position.y = -yLimit + rnd.nextInt( 2*yLimit);  
           e.boundsDirty = true;
+        };
+        
+        final Consumer<Player> addNewTank = player -> 
+        {
+            final Tank tank = new Tank(player, new Blackboard(world));
+//            tank.setBehaviour( new SeekAndDestroy( tank ) );
+            do {
+                setRandomPosition.accept( tank );
+            } 
+            while ( world.collidesWith( tank ) );
+            world.add( tank );
         };
         
         for ( int i = 0 ; i < 10 ; i++ ) 
         {
-            final Tank e1 = new Tank( team1 );
-            e1.setBehaviour( new SeekAndDestroy( world , e1 ) );
-            do { 
-                setRandomPosition.accept( e1 );
-            } while ( world.collidesWith( e1 ) );
-            team1.add( e1 );
-            world.add( e1 );
-            
-            final Tank e2 = new Tank(team2 );
-            e2.setBehaviour( new SeekAndDestroy( world , e2 ) );
-            do {
-                setRandomPosition.accept( e2 );
-            } while ( world.collidesWith( e2 ) );
-            team2.add( e2 );
-            world.add( e2 );
+            addNewTank.accept( team1 );
+            addNewTank.accept( team2 );
         }
         
         final GameScreen screen = new GameScreen(world);

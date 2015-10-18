@@ -1,9 +1,15 @@
-package de.codesourcery.toyai;
+package de.codesourcery.toyai.entities;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import com.badlogic.gdx.math.Vector2;
+
+import de.codesourcery.toyai.Blackboard;
+import de.codesourcery.toyai.Entity;
+import de.codesourcery.toyai.IBlackboard;
+import de.codesourcery.toyai.ITickListener;
+import de.codesourcery.toyai.World;
 
 public final class Tank extends MoveableEntity implements ITickListener 
 {
@@ -20,9 +26,9 @@ public final class Tank extends MoveableEntity implements ITickListener
     
     private float timeBeforeNextShotReady = 0;
     
-    public Tank(Entity owner) 
+    public Tank(Entity owner,IBlackboard bb) 
     {
-        super(EntityType.TANK, owner);
+        super(EntityType.TANK, owner,bb,40f);
     }
     
     @Override
@@ -65,7 +71,7 @@ public final class Tank extends MoveableEntity implements ITickListener
         return TURRET_RANGE;
     }
     
-    public void fireShot(World world,Vector2 destination) 
+    public void fireShot() 
     {
         if ( ! isReadyToShoot() ) 
         {
@@ -76,11 +82,11 @@ public final class Tank extends MoveableEntity implements ITickListener
         initPos.scl( height*2 );
         initPos.add( position );
         
-        final Vector2 orientation = new Vector2(destination);
-        orientation.sub( initPos );
-        orientation.nor();
+        final Vector2 orientation = new Vector2( getOrientation() );
         
-        final Bullet bullet = new Bullet(this, initPos , orientation , TURRET_RANGE , BULLET_VELOCITY , BULLET_DAMAGE ) 
+        final World world = blackboard.getWorld();
+        
+        final Bullet bullet = new Bullet(this, initPos , orientation , TURRET_RANGE , BULLET_VELOCITY , BULLET_DAMAGE , new Blackboard( world ) ) 
         {
             @Override
             public void onRemoveFromWorld(World world) {
@@ -101,9 +107,10 @@ public final class Tank extends MoveableEntity implements ITickListener
     }
 
     @Override
-    public void tickHook(float deltaSeconds) 
+    public boolean tickHook(float deltaSeconds) 
     {
         timeBeforeNextShotReady -= deltaSeconds;
+        return true;
     }
     
     @Override

@@ -33,10 +33,8 @@ public abstract class Entity implements ITickListener
         }        
     }
     
-    public static final float ROT_DEG_PER_SECOND = 60f;
-    public static final float ROT_RAD_PER_SECOND = (float) Math.toRadians( ROT_DEG_PER_SECOND );
-    
-    public static final float MAX_VELOCITY = 40f;
+    public static final float ROT_DEG_PER_SECOND = 360f;
+    public static final float ROT_RAD_PER_SECOND = ROT_DEG_PER_SECOND * Misc.TO_RAD;
     
     public static final float MAX_ACCELERATION = 80f;
     public static final float MAX_DECELARATION = 160f;
@@ -60,19 +58,27 @@ public abstract class Entity implements ITickListener
     public final EntityType type;
     public final Entity owner;
     
-    public Entity(EntityType type,Entity owner) {
+    public final IBlackboard blackboard;
+    
+    public Entity(EntityType type,Entity owner,IBlackboard blackboard) {
         this.type = type;
         this.owner = owner;
         this.width = 10;
         this.height = 10;
+        this.blackboard = blackboard;
     }
     
-    public Vector2 getOrientation() {
+    public float getOrientationInRad() {
+        return Misc.angleY( orientation );
+    }
+    
+    private Vector2 getOrientation() 
+    {
         return orientation;
     }
     
     public void setOrientation(float x,float y) {
-        this.orientation.set( x,y).nor();
+        this.orientation.set( x,y ).nor();
     }    
     
     public void setOrientation(Vector2 v) {
@@ -136,23 +142,22 @@ public abstract class Entity implements ITickListener
     }
 
     @Override
-    public boolean tick(float deltaSeconds) 
+    public final boolean tick(float deltaSeconds) 
     {
-        if ( behaviour.tick( deltaSeconds ) != Result.PENDING ) {
+        if ( behaviour.tick( deltaSeconds, blackboard ) != Result.PENDING ) {
             behaviour = IBehaviour.NOP;
         }
-        tickHook( deltaSeconds );
-        return true;
+        return tickHook( deltaSeconds );
     }
     
-    protected void tickHook(float deltaSeconds) {
-        
+    protected boolean tickHook(float deltaSeconds) {
+        return true;
     }
     
     public void setBehaviour(IBehaviour behaviour) 
     {
         if ( this.behaviour != behaviour ) {
-            this.behaviour.onCancel();
+            this.behaviour.discard(blackboard);
         }
         System.out.println("Setting behaviour "+behaviour+" on "+this);
         this.behaviour = behaviour;
@@ -164,6 +169,10 @@ public abstract class Entity implements ITickListener
     
     public void onCollision(World world,Entity collidingEntity) 
     {
+    }
+    
+    public final boolean is(Entity.EntityType t) {
+        return type == t;
     }
     
     public final boolean hasType(Entity.EntityType t) 
