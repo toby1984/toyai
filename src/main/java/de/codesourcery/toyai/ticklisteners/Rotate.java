@@ -9,7 +9,7 @@ import de.codesourcery.toyai.Misc;
 
 public class Rotate implements IBehaviour {
 
-    private static final double EPSILON_ANGLE = 0.5*((2*Math.PI)/360); // 0.5°
+    private static final double EPSILON_ANGLE = ((2*Math.PI)/360); 
     
     private final Entity entity;
     private float desiredAngleRad;
@@ -50,7 +50,7 @@ public class Rotate implements IBehaviour {
         
         if ( Math.abs( deltaAngleRad ) > EPSILON_ANGLE ) // delta > 1° 
         {
-            elapsedTime += deltaAngleRad;
+            elapsedTime += deltaSeconds;
             
             if ( elapsedTime > 4 ) 
             {
@@ -71,14 +71,15 @@ public class Rotate implements IBehaviour {
                 d1 = (float) (2*Math.PI - d2);                
             }
             
+            final float angleStep = deltaAngleRad > Math.toRadians( 1 ) ? Entity.ROT_RAD_PER_SECOND : (float) Math.toRadians(30);
             tmp.set( orientation.x , orientation.y , 0 );
             if ( d1 < d2 ) {
-                tmp.rotateRad( Misc.Z_AXIS3 , Entity.ROT_RAD_PER_SECOND*deltaSeconds );
+                tmp.rotateRad( Misc.Z_AXIS3 , angleStep*deltaSeconds );
             } else {
-                tmp.rotateRad( Misc.Z_AXIS3 , -Entity.ROT_RAD_PER_SECOND*deltaSeconds );
+                tmp.rotateRad( Misc.Z_AXIS3 , -angleStep*deltaSeconds );
             }
-            System.out.println("Rotating "+entity.id);
             entity.setOrientation( tmp.x , tmp.y );
+            System.out.println("Rotating "+entity.id+" to "+entity.getOrientation());
             return Result.PENDING;
         }
         System.out.println("Orientation reached.");

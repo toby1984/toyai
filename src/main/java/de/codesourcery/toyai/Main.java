@@ -23,10 +23,13 @@ public class Main
         
         final Random rnd = new Random(0xdeadbeef);
         
+        final int xLimit = (GameScreen.MAX_X-20)/2;
+        final int yLimit = (GameScreen.MAX_Y-20)/2;
+        
         final Consumer<Entity> setRandomPosition = e -> 
         {
-          e.position.x = -GameScreen.MAX_X/2 + rnd.nextInt( GameScreen.MAX_X );  
-          e.position.y = -GameScreen.MAX_Y/2 + rnd.nextInt( GameScreen.MAX_Y );  
+          e.position.x = -xLimit+ rnd.nextInt( xLimit );  
+          e.position.y = -yLimit + rnd.nextInt( yLimit);  
           e.boundsDirty = true;
         };
         

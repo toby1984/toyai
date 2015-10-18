@@ -113,7 +113,11 @@ public class SeekAndDestroy implements IBehaviour
             }
         }
         
-        if ( wrapper == null || currentTarget == null || currentTarget.isDead() ) 
+        if ( wrapper == null ) {
+            this.wrapper = new Wanderer();
+        }
+        
+        if ( currentTarget == null || currentTarget.isDead() ) 
         {
             currentTarget = world.visitNeighboursWithResult( entity.position , SEEK_RANGE , new Visitor() );
             if ( currentTarget != null ) 
@@ -124,10 +128,6 @@ public class SeekAndDestroy implements IBehaviour
                 }
                 this.wrapper = new ShootAt( world , entity , currentTarget.position );
             } 
-            else 
-            {
-                this.wrapper = new Wanderer(); 
-            }
         } 
         return Result.PENDING;
     }
