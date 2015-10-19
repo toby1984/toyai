@@ -2,7 +2,7 @@ package de.codesourcery.toyai.behaviours;
 
 import java.util.Random;
 
-import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 
 import de.codesourcery.toyai.Entity;
 import de.codesourcery.toyai.IBehaviour;
@@ -10,9 +10,9 @@ import de.codesourcery.toyai.IBlackboard;
 import de.codesourcery.toyai.Misc;
 import de.codesourcery.toyai.entities.MoveableEntity;
 
-public class Wander extends AbstractBehaviour 
+public class Wander extends AbstractBehaviour
 {
-    protected final Random rnd = new Random(System.currentTimeMillis());
+    protected final Random rnd = new Random(0xdeadbeef);
 
     private final MoveableEntity entity;
 
@@ -21,55 +21,53 @@ public class Wander extends AbstractBehaviour
     private final IBehaviour wrapper;
     private final float timeUntilDirectionChange;
 
-    public Wander(MoveableEntity entity,float timeUntilDirectionChange) 
+    public Wander(MoveableEntity entity,float timeUntilDirectionChange)
     {
         this.entity = entity;
         this.rotBBParam = registerParam( getId()+".rot" );
         this.timeUntilDirectionChange = timeUntilDirectionChange;
-        this.wrapper = new Rotate( entity , rotBBParam );
+        this.wrapper = new AvoidObstacle( entity , rotBBParam );
     }
 
     private void setRandomOrientation(IBlackboard bb)
     {
         // pick random direction
-        float currentAngleRad = Misc.angleY( entity.getOrientation() );
-        float newAngleRad = (float) (currentAngleRad + random() * Math.PI);
-        if ( newAngleRad < 0 ) 
+//        float currentAngleRad = Misc.angleY( entity.getOrientation() );
+        float newAngleRad = (float) ( rnd.nextFloat() * 2*Math.PI );
+
+        if ( newAngleRad < 0 )
         {
             newAngleRad += 2*Math.PI;
         } else if ( newAngleRad > 2*Math.PI ) {
             newAngleRad -= 2*Math.PI;
         }
-        
-        Vector2 rot = bb.getVector( rotBBParam );
-        if ( rot == null ) {
-            rot = new Vector2();
-            bb.put( rotBBParam, rot );
-        }         
 
-        rot.set( Misc.Y_AXIS2 );
-        rot.rotate( newAngleRad );
-        
-        System.out.println("Wander: "+currentAngleRad*Misc.TO_DEG+" => "+newAngleRad*Misc.TO_DEG);
+        Vector3 rot = bb.getVector3( rotBBParam );
+        if ( rot == null ) {
+            rot = new Vector3();
+            bb.put( rotBBParam, rot );
+        }
+        Misc.setToRotatedUnitVector( rot , newAngleRad );
         bb.put( rotBBParam , rot );
-        
+
         timeRemaining = timeUntilDirectionChange;
     }
 
-    private float random() 
+    private float random()
     {
         return rnd.nextFloat() - rnd.nextFloat();
     }
 
     @Override
-    public String toString() 
+    public String toString()
     {
         return "Wander";
     }
-    
+
     @Override
-    protected void onDiscardHook(IBlackboard bb) 
+    protected void discardHook(IBlackboard bb)
     {
+    	wrapper.discard( bb );
         entity.stopMoving();
     }
 
@@ -77,12 +75,12 @@ public class Wander extends AbstractBehaviour
     protected Result tickHook(float deltaSeconds, IBlackboard blackboard)
     {
         entity.acceleration = Entity.MAX_ACCELERATION;
-        
+
         if ( timeRemaining <= 0 ) {
             setRandomOrientation( blackboard );
         }
         final Result result = wrapper.tick(deltaSeconds, blackboard);
-        switch ( result ) 
+        switch ( result )
         {
             case FAILURE:
                 return Result.FAILURE;

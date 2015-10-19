@@ -5,44 +5,51 @@ import de.codesourcery.toyai.Entity.EntityType;
 import de.codesourcery.toyai.IBehaviour;
 import de.codesourcery.toyai.IBlackboard;
 import de.codesourcery.toyai.World.ICallbackWithResult;
+import de.codesourcery.toyai.decorators.UntilDead;
 import de.codesourcery.toyai.entities.Tank;
 
 public class SeekAndDestroy extends AbstractBehaviour
 {
     private final Tank entity;
-    
-    private final float SEEK_RANGE = Tank.TURRET_RANGE*2;
-    
+
     private IBehaviour wrapper;
-    
-    public SeekAndDestroy(Tank entity) 
+    private final String targetParamName;
+
+    public SeekAndDestroy(Tank entity)
     {
         this.entity = entity;
-        final String targetParamName = registerParam( getId()+".target" );
-        
-        final IBehaviour huntingBehaviour = new SelectTargetBehaviour(targetParamName) 
-        {
-            private Tank currentTarget;
-            
-            @Override
-            protected Object getTarget(IBlackboard bb) 
-            {
-                if ( currentTarget == null || currentTarget.isDead() ) {
-                    currentTarget = bb.getWorld().visitNeighboursWithResult( entity.position , SEEK_RANGE , new Visitor() );
-                }
-                return currentTarget; 
-            }
-        }.andThen( new ShootAt( entity , targetParamName ) );
-        
-        wrapper = huntingBehaviour.or( new Wander(entity,5.0f ) );
+        targetParamName = registerParam( getId()+".target" );
+        wrapper = forever ( this::createBehaviour );
     }
-    
-    protected final class Visitor implements ICallbackWithResult<Tank> 
+
+    private IBehaviour createBehaviour()
+    {
+        final IBehaviour selectTarget = new SelectTargetBehaviour(targetParamName)
+        {
+            @Override
+            protected Object getTarget(IBlackboard bb)
+            {
+            	Entity currentTarget = (Entity) getCurrentTarget( bb );
+                if ( currentTarget == null || currentTarget.isDead() )
+                {
+                    currentTarget = bb.getWorld().visitNeighboursWithResult( entity.position , Tank.SEEK_RANGE , new Visitor() );
+                }
+                return currentTarget;
+            }
+        };
+
+        final IBehaviour huntingBehaviour = selectTarget.andThen( new UntilDead( new ShootAt( entity , targetParamName ) , targetParamName ) );
+
+        final IBehaviour wanderingBehaviour = new Wander(entity,5.0f ).doUntil( selectTarget );
+        return huntingBehaviour.or( wanderingBehaviour );
+    }
+
+    protected final class Visitor implements ICallbackWithResult<Tank>
     {
         private Tank result;
-        
+
         @Override
-        public boolean visit(Entity obj) 
+        public boolean visit(Entity obj)
         {
             if ( obj != entity && obj.hasType( EntityType.TANK ) && obj.getRootOwner() != entity.getRootOwner() ) {
                 result = (Tank) obj;
@@ -56,21 +63,21 @@ public class SeekAndDestroy extends AbstractBehaviour
             return result;
         }
     }
-    
+
     @Override
-    public String toString() 
+    public String toString()
     {
         return "SeekAndDestroy[ "+wrapper+"]";
     }
-    
+
     @Override
-    protected Result tickHook(float deltaSeconds, IBlackboard blackboard) 
+    protected Result tickHook(float deltaSeconds, IBlackboard blackboard)
     {
         return wrapper.tick(deltaSeconds, blackboard);
     }
-    
+
     @Override
-    public void onDiscardHook(IBlackboard blackboard) 
+    public void discardHook(IBlackboard blackboard)
     {
         if ( wrapper != null ) {
             wrapper.discard(blackboard);
