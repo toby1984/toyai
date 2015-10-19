@@ -7,45 +7,47 @@ import de.codesourcery.toyai.IBlackboard;
 import de.codesourcery.toyai.Misc;
 import de.codesourcery.toyai.World.ObstacleTestResult;
 
-public class AvoidObstacle extends AbstractBehaviour
+public final class AvoidObstacle extends AbstractBehaviour
 {
 	private final Entity entity;
-	private final ObstacleTestResult testResult = new ObstacleTestResult();
+	private final String obstacleBBParam;
 	private final String rotParam;
-
 	private final Rotate rotate;
 
-	public AvoidObstacle(Entity entity)
-	{
-		this.entity = entity;
-		this.rotParam = registerParam( getId()+".rot" );
-		this.rotate = new Rotate( entity , rotParam );
-	}
-
-	public AvoidObstacle(Entity entity,String rotParam)
+	public AvoidObstacle(Entity entity,String rotParam,String obstacleBBParam)
 	{
 		this.entity = entity;
 		this.rotParam = rotParam;
+		this.obstacleBBParam = obstacleBBParam;
 		this.rotate = new Rotate( entity , rotParam );
 	}
-
+	
+	@Override
+	protected void discardHook(IBlackboard bb) 
+	{
+	    rotate.discard( bb );
+	}
+	
+	private ObstacleTestResult getTestResult(IBlackboard bb) {
+	    return (ObstacleTestResult) bb.get( obstacleBBParam );
+	}
+	
 	@Override
 	protected Result tickHook(float deltaSeconds, IBlackboard blackboard)
 	{
-		blackboard.getWorld().checkForObstacle( entity , testResult );
-
-    	/*
-    	 * 0b111 =
-    	 * 0b1.. = left
-    	 * 0b.1. = center
-    	 * 0b..1 = right
-    	 */
-		final float rotInRad = 5*Misc.TO_RAD;
+		final float rotInRad = 15*Misc.TO_RAD;
 		float angleDeviation = 0;
-		switch ( testResult.bitMask )
+		
+        /*
+         * 0b111 =
+         * 0b1.. = left
+         * 0b.1. = center
+         * 0b..1 = right
+         */		
+		switch ( getTestResult(blackboard).bitMask )
 		{
-			case 0b000:
-				break;
+			case 0b000: // NO OBSTACLE
+		        return rotate.tick(deltaSeconds, blackboard);
 			case 0b001: // right whisker => turn left (counter-clockwise)
 				angleDeviation = -rotInRad;
 				LOG.log("Obstacle right");
@@ -75,18 +77,15 @@ public class AvoidObstacle extends AbstractBehaviour
 			default:
 				throw new RuntimeException("Unreachable code reached");
 		}
-		Vector3 rot = blackboard.getVector3( rotParam );
-		if ( rot == null ) {
-			rot = new Vector3();
-			blackboard.put( rotParam , rot );
-		}
-
-		if ( angleDeviation == 0 )
+		
+		if ( angleDeviation != 0 )
 		{
-			rot.set( entity.getOrientation() );
-		}
-		else
-		{
+	        Vector3 rot = blackboard.getVector3( rotParam );
+	        if ( rot == null ) {
+	            rot = new Vector3();
+	            blackboard.put( rotParam , rot );
+	        }
+	        
 			float newAngle = Misc.angleY( entity.getOrientation() ) + angleDeviation;
 			if ( newAngle > 2*Math.PI) {
 				newAngle -= 2*Math.PI;
@@ -94,9 +93,8 @@ public class AvoidObstacle extends AbstractBehaviour
 				newAngle += 2*Math.PI;
 			}
 			Misc.setToRotatedUnitVector( rot , newAngle );
+			blackboard.put( rotParam , rot );
 		}
-		blackboard.put( rotParam , rot );
-
 		return rotate.tick(deltaSeconds, blackboard);
 	}
 

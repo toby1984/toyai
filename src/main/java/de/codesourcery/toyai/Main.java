@@ -16,7 +16,7 @@ public class Main
 {
     public static final float FPS = 60;
     private static final boolean ADD_BEHAVIOURS = true;
-    private static final int BOTS_PER_TEAM = 10;
+    private static final int BOTS_PER_TEAM = 30;
 
     public static void main(String[] args)
     {
@@ -46,7 +46,7 @@ public class Main
         {
             final Tank tank = new Tank(player, new Blackboard(world));
             if ( ADD_BEHAVIOURS ) {
-            	tank.setBehaviour( new Wander( tank , 5f ) );
+            	tank.setBehaviour( new Wander( tank , 2 , 5f ) );
 //            	tank.setBehaviour( new SeekAndDestroy( tank ) );
             }
             do {

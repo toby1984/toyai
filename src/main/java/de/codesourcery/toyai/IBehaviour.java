@@ -138,6 +138,29 @@ public interface IBehaviour
 			}
 		};
     }
+    
+    public default IBehaviour always(IBehaviour delegate) 
+    {
+        return new AbstractBehaviour() {
+
+            @Override
+            protected Result tickHook(float deltaSeconds,IBlackboard blackboard) 
+            {
+                delegate.tick(deltaSeconds, blackboard);
+                return Result.PENDING;
+            }
+            
+            @Override
+            public String toString() {
+                return "always "+delegate;
+            }
+            
+            @Override
+            protected void discardHook(IBlackboard bb) {
+                delegate.discard( bb );
+            }
+        };
+    }
 
     public default IBehaviour forever( Supplier<IBehaviour> supp)
     {
@@ -234,10 +257,10 @@ public interface IBehaviour
         };
     }
 
-    public default IBehaviour parallel(IBehaviour b2,IBehaviour... other)
+    public default IBehaviour parallel(IBehaviour b1,IBehaviour b2,IBehaviour... other)
     {
         final List<IBehaviour> array = new ArrayList<>();
-        array.add( this );
+        array.add( b1 );
         array.add( b2 );
         if ( other != null )
         {
@@ -256,28 +279,25 @@ public interface IBehaviour
             @Override
             protected Result tickHook(float deltaSeconds, IBlackboard blackboard)
             {
-                if ( array.isEmpty() ) {
-                    return Result.SUCCESS;
-                }
+                boolean success = true;
                 for ( int i = 0 ; i < array.size() ; i++)
                 {
                     final IBehaviour b = array.get(i);
                     final Result result = b.tick( deltaSeconds, blackboard);
-                    switch( result )
-                    {
+                    switch( result ) {
                         case FAILURE:
-                            return Result.FAILURE;
+                            return result;
                         case PENDING:
+                            success = false;
                             break;
                         case SUCCESS:
-                            array.remove( i );
-                            i--;
+                            // $$ fall-through $$
                             break;
                         default:
                             throw new RuntimeException("Unhandled case: "+result);
                     }
                 }
-                return Result.PENDING;
+                return success ? Result.SUCCESS : Result.PENDING;
             }
 
             @Override

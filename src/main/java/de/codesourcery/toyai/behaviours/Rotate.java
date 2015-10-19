@@ -6,7 +6,7 @@ import de.codesourcery.toyai.Entity;
 import de.codesourcery.toyai.IBlackboard;
 import de.codesourcery.toyai.Misc;
 
-public class Rotate extends AbstractBehaviour {
+public final class Rotate extends AbstractBehaviour {
 
     private static final double EPSILON_ANGLE = ((2*Math.PI)/360)*0.5;
 
@@ -86,6 +86,7 @@ public class Rotate extends AbstractBehaviour {
             entity.setOrientation( tmp.x , tmp.y );
             return Result.PENDING;
         }
+        LOG.log("aligned");
         return Result.SUCCESS;
     }
 }

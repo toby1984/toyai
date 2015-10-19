@@ -8,9 +8,10 @@ import de.codesourcery.toyai.Entity;
 import de.codesourcery.toyai.IBehaviour;
 import de.codesourcery.toyai.IBlackboard;
 import de.codesourcery.toyai.Misc;
+import de.codesourcery.toyai.decorators.DetectObstacle;
 import de.codesourcery.toyai.entities.MoveableEntity;
 
-public class Wander extends AbstractBehaviour
+public final class Wander extends AbstractBehaviour
 {
     protected final Random rnd = new Random(0xdeadbeef);
 
@@ -19,14 +20,29 @@ public class Wander extends AbstractBehaviour
     private float timeRemaining;
     private final String rotBBParam;
     private final IBehaviour wrapper;
-    private final float timeUntilDirectionChange;
+    
+    private final float minTimeUntilDirectionChange;
+    private final float maxTimeUntilDirectionChange;
 
-    public Wander(MoveableEntity entity,float timeUntilDirectionChange)
+    public Wander(MoveableEntity entity,float minTimeUntilDirectionChange,float maxTimeUntilDirectionChange)
     {
+        if ( minTimeUntilDirectionChange > maxTimeUntilDirectionChange ) {
+            throw new IllegalArgumentException();
+        }
+        
         this.entity = entity;
         this.rotBBParam = registerParam( getId()+".rot" );
-        this.timeUntilDirectionChange = timeUntilDirectionChange;
-        this.wrapper = new AvoidObstacle( entity , rotBBParam );
+        final String obstacleParam = registerParam( getId()+".obstacle" );
+        
+        this.minTimeUntilDirectionChange = minTimeUntilDirectionChange;
+        this.maxTimeUntilDirectionChange = maxTimeUntilDirectionChange;
+        
+        this.wrapper = new DetectObstacle(entity, obstacleParam, new AvoidObstacle( entity , rotBBParam , obstacleParam ) );
+    }
+    
+    private float randomTime() {
+        
+        return minTimeUntilDirectionChange+rnd.nextFloat()*(maxTimeUntilDirectionChange-minTimeUntilDirectionChange);
     }
 
     private void setRandomOrientation(IBlackboard bb)
@@ -50,7 +66,7 @@ public class Wander extends AbstractBehaviour
         Misc.setToRotatedUnitVector( rot , newAngleRad );
         bb.put( rotBBParam , rot );
 
-        timeRemaining = timeUntilDirectionChange;
+        timeRemaining = randomTime();
     }
 
     private float random()

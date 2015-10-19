@@ -3,7 +3,7 @@ package de.codesourcery.toyai.behaviours;
 import de.codesourcery.toyai.IBehaviour;
 import de.codesourcery.toyai.IBlackboard;
 
-public class TimeoutBehaviour extends AbstractBehaviour {
+public final class TimeoutBehaviour extends AbstractBehaviour {
 
     private IBehaviour delegate;
     private float timeRemaining;

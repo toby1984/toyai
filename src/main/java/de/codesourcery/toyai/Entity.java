@@ -92,7 +92,7 @@ public abstract class Entity implements ITickListener
         this.type = type;
         this.owner = owner;
         this.width = 10;
-        this.height = 20;
+        this.height = 10;
         this.blackboard = blackboard;
         updateWhiskerConfiguration();
     }

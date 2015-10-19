@@ -8,7 +8,7 @@ import de.codesourcery.toyai.World.ICallbackWithResult;
 import de.codesourcery.toyai.decorators.UntilDead;
 import de.codesourcery.toyai.entities.Tank;
 
-public class SeekAndDestroy extends AbstractBehaviour
+public final class SeekAndDestroy extends AbstractBehaviour
 {
     private final Tank entity;
 
@@ -40,7 +40,7 @@ public class SeekAndDestroy extends AbstractBehaviour
 
         final IBehaviour huntingBehaviour = selectTarget.andThen( new UntilDead( new ShootAt( entity , targetParamName ) , targetParamName ) );
 
-        final IBehaviour wanderingBehaviour = new Wander(entity,5.0f ).doUntil( selectTarget );
+        final IBehaviour wanderingBehaviour = new Wander(entity, 2f , 5.0f ).doUntil( selectTarget );
         return huntingBehaviour.or( wanderingBehaviour );
     }
 
@@ -79,8 +79,6 @@ public class SeekAndDestroy extends AbstractBehaviour
     @Override
     public void discardHook(IBlackboard blackboard)
     {
-        if ( wrapper != null ) {
-            wrapper.discard(blackboard);
-        }
+        wrapper.discard(blackboard);
     }
 }

@@ -20,7 +20,6 @@ import com.badlogic.gdx.math.Vector3;
 
 import de.codesourcery.toyai.Entity.EntityType;
 import de.codesourcery.toyai.behaviours.MoveTo;
-import de.codesourcery.toyai.behaviours.Wander;
 import de.codesourcery.toyai.entities.Bullet;
 import de.codesourcery.toyai.entities.MoveableEntity;
 import de.codesourcery.toyai.entities.Player;
@@ -82,6 +81,9 @@ public class GameScreen extends JFrame {
 
         public MyPanel()
         {
+            this.setFocusable(true);
+            this.requestFocus();
+            
         	addKeyListener( new KeyAdapter()
         	{
         		@Override
@@ -117,8 +119,10 @@ public class GameScreen extends JFrame {
 
                         selected.blackboard.put( "ui.target" , destination );
 //                        selected.setBehaviour( new ShootAt( (Tank) selected , "ui.target" ) );
-                        selected.setBehaviour( new Wander( (MoveableEntity) selected , 3f ) );
+//                        selected.setBehaviour( new Wander( (MoveableEntity) selected , 3f ) );
 //                        selected.setBehaviour( new AimAt( selected , "ui.target") );
+                         
+                        selected.setBehaviour( new MoveTo( (MoveableEntity) selected , "ui.target" , "rotParam" ) );
 //                        selected.setBehaviour( new SeekAndDestroy( (Tank) selected ) );
                     }
                     else if ( isRightButton( e ) )
@@ -129,7 +133,7 @@ public class GameScreen extends JFrame {
                     {
                         destination = viewToModel( e.getPoint() );
                         selected.blackboard.put( "ui.target" , destination );
-                        selected.setBehaviour( new MoveTo( (MoveableEntity) selected , "ui.target" ) );
+                        selected.setBehaviour( new MoveTo( (MoveableEntity) selected , "ui.target" , "rotParam" ) );
                     }
                 };
             };

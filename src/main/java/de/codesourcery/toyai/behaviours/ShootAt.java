@@ -5,7 +5,7 @@ import de.codesourcery.toyai.IBlackboard;
 import de.codesourcery.toyai.decorators.UntilDead;
 import de.codesourcery.toyai.entities.Tank;
 
-public class ShootAt extends AbstractBehaviour
+public final class ShootAt extends AbstractBehaviour
 {
     private final Tank entity;
     private final IBehaviour wrapper;
@@ -16,9 +16,10 @@ public class ShootAt extends AbstractBehaviour
     {
         this.entity = e;
         this.targetBlackboardParam = targetBBParam;
+        final String rotParam = getId()+".rot";
 
-        final IBehaviour moveIntoRange = new MoveIntoRange( entity , targetBBParam , entity.getEngagementDistance() );
-        final IBehaviour aimAt = new AlignWith( entity , targetBBParam );
+        final IBehaviour moveIntoRange = new MoveIntoRange( entity , targetBBParam , entity.getEngagementDistance() , rotParam );
+        final IBehaviour aimAt = new AlignWith( entity , targetBBParam , rotParam );
         final IBehaviour fireTurret = new FireTurretBehaviour( entity );
 
         wrapper = moveIntoRange.andThen( aimAt ).andThen( new UntilDead( fireTurret , targetBBParam ) );

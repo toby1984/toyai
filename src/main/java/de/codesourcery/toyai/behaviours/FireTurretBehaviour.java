@@ -3,7 +3,7 @@ package de.codesourcery.toyai.behaviours;
 import de.codesourcery.toyai.IBlackboard;
 import de.codesourcery.toyai.entities.Tank;
 
-public class FireTurretBehaviour extends AbstractBehaviour
+public final class FireTurretBehaviour extends AbstractBehaviour
 {
     private final Tank entity;
 
