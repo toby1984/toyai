@@ -8,7 +8,7 @@ import javax.swing.Timer;
 
 import com.badlogic.gdx.math.Vector3;
 
-import de.codesourcery.toyai.behaviours.Wander;
+import de.codesourcery.toyai.behaviours.SeekAndDestroy;
 import de.codesourcery.toyai.entities.Player;
 import de.codesourcery.toyai.entities.Tank;
 
@@ -16,8 +16,9 @@ public class Main
 {
     public static final float FPS = 60;
     private static final boolean ADD_BEHAVIOURS = false;
-    private static final int BOTS_IN_TEAM1 = 1;
-    private static final int BOTS_IN_TEAM2 = 0;
+    private static final boolean RANDOM_ORIENTATION = false;
+    private static final int BOTS_IN_TEAM1 = 30;
+    private static final int BOTS_IN_TEAM2 = 30;
 
     public static void main(String[] args)
     {
@@ -37,9 +38,12 @@ public class Main
           e.position.x = -xLimit+ rnd.nextInt( 2*xLimit );
           e.position.y = -yLimit + rnd.nextInt( 2*yLimit);
           final Vector3 tmp = new Vector3();
-          final double angleRad = rnd.nextFloat()*2*Math.PI;
-          Misc.setToRotatedUnitVector( tmp  , (float) angleRad );
-          e.setOrientation( tmp );
+          
+          if ( RANDOM_ORIENTATION ) {
+              final double angleRad = rnd.nextFloat()*2*Math.PI;
+              Misc.setToRotatedUnitVector( tmp  , (float) angleRad );
+              e.setOrientation( tmp );
+          }
           e.boundsDirty = true;
         };
 
@@ -47,8 +51,8 @@ public class Main
         {
             final Tank tank = new Tank(player, new Blackboard(world));
             if ( ADD_BEHAVIOURS ) {
-            	tank.setBehaviour( new Wander( tank , 2 , 5f ) );
-//            	tank.setBehaviour( new SeekAndDestroy( tank ) );
+//            	tank.setBehaviour( new Wander( tank , 2 , 5f ) );
+            	tank.setBehaviour( new SeekAndDestroy( tank ) );
             }
             do {
                 setRandomPosition.accept( tank );

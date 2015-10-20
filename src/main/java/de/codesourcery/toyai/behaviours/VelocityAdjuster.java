@@ -45,14 +45,13 @@ public class VelocityAdjuster extends AbstractBehaviour
 			}
 			else if ( acceleration < -Entity.MAX_ACCELERATION )
 			{
-				acceleration = -Entity.MAX_ACCELERATION;
+				acceleration = Entity.MAX_ACCELERATION;
 			}
-			LOG.log("Target speed "+desiredVelocity+" NOT reached, current speed: "+currentV+" => acceleration: "+acceleration);
+//			LOG.log("Target speed "+desiredVelocity+" NOT reached, current speed: "+currentV+" => acceleration: "+acceleration);
 			entity.setAcceleration( acceleration );
 			return delegate.tick(deltaSeconds, blackboard);
 		}
-		LOG.log("Target speed reached: "+currentV);
-		entity.setAcceleration(0);
+//		LOG.log("Target speed reached: "+currentV);
 		return delegate.tick(deltaSeconds, blackboard);
 	}
 

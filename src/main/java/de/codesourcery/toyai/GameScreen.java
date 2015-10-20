@@ -9,6 +9,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.text.DecimalFormat;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,8 +20,8 @@ import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 
 import de.codesourcery.toyai.Entity.EntityType;
-import de.codesourcery.toyai.behaviours.Arrive;
 import de.codesourcery.toyai.behaviours.MoveTo;
+import de.codesourcery.toyai.behaviours.ShootAt;
 import de.codesourcery.toyai.entities.Bullet;
 import de.codesourcery.toyai.entities.MoveableEntity;
 import de.codesourcery.toyai.entities.Player;
@@ -28,12 +29,12 @@ import de.codesourcery.toyai.entities.Tank;
 
 public class GameScreen extends JFrame {
 
-	public static final boolean DEBUG_RENDER_SEEK_RANGE = false;
-	public static final boolean DEBUG_RENDER_TURRET_RANGE = false;
+    public static final boolean DEBUG_RENDER_SEEK_RANGE = false;
+    public static final boolean DEBUG_RENDER_TURRET_RANGE = false;
 
-	public static final boolean DEBUG_RENDER_WHISKERS = false;
+    public static final boolean DEBUG_RENDER_WHISKERS = false;
 
-	public static final boolean DEBUG_RENDER_BLACKBOARD = true;
+    public static final boolean DEBUG_RENDER_BLACKBOARD = false;
 
     public static final int MAX_X = 640;
     public static final int MAX_Y = 480;
@@ -87,23 +88,23 @@ public class GameScreen extends JFrame {
             this.setFocusable(true);
             this.requestFocus();
 
-        	addKeyListener( new KeyAdapter()
-        	{
-        		@Override
-        		public void keyReleased(KeyEvent e)
-        		{
-        			if ( e.getKeyCode() == KeyEvent.VK_SPACE )
-        			{
-        				Main.TICK_WORLD = ! Main.TICK_WORLD;
-        			}
-        		}
-			});
+            addKeyListener( new KeyAdapter()
+            {
+                @Override
+                public void keyReleased(KeyEvent e)
+                {
+                    if ( e.getKeyCode() == KeyEvent.VK_SPACE )
+                    {
+                        Main.TICK_WORLD = ! Main.TICK_WORLD;
+                    }
+                }
+            });
             final MouseAdapter adapter = new MouseAdapter() {
 
                 @Override
-				public void mouseMoved(java.awt.event.MouseEvent e)
+                public void mouseMoved(java.awt.event.MouseEvent e)
                 {
-                	mousePos.setLocation( e.getPoint() );
+                    mousePos.setLocation( e.getPoint() );
 
                     highlighted  = world.getEntityAt( viewToModel( e.getPoint() ));
                     if ( highlighted == null ) {
@@ -114,7 +115,7 @@ public class GameScreen extends JFrame {
                 }
 
                 @Override
-				public void mouseReleased(java.awt.event.MouseEvent e)
+                public void mouseReleased(java.awt.event.MouseEvent e)
                 {
                     if ( selected != null && selected.is( EntityType.TANK ) && isLeftButton( e) )
                     {
@@ -123,13 +124,19 @@ public class GameScreen extends JFrame {
                         final Tank tank = (Tank) selected;
 
                         selected.blackboard.put( "ui.target" , destination );
-//                        selected.setBehaviour( new ShootAt( tank , "ui.target" ) );
-//                        selected.setBehaviour( new Wander( tank , 3f ) );
-//                        selected.setBehaviour( new AlignWith( tank , "ui.target" , "rot" ) );
+                        
+                        Entity clickedEntity = world.getEntityAt( viewToModel( e.getPoint() ));
+                        if ( clickedEntity != null && clickedEntity.is(EntityType.TANK ) ) {
+                            selected.blackboard.put( "tank.target" , clickedEntity );
+                            selected.setBehaviour( new ShootAt( tank , "tank.target" ) );
+                        }
+                        
+                        //                        selected.setBehaviour( new Wander( tank , 3f ) );
+                        //                        selected.setBehaviour( new AlignWith( tank , "ui.target" , "rot" ) );
 
-                        selected.setBehaviour( new Arrive( tank, "ui.target" , "rotParam", "velocity" ) );
-//                        selected.setBehaviour( new MoveTo( tank, "ui.target" , "rotParam" , "velocity" ) );
-//                        selected.setBehaviour( new SeekAndDestroy( tank ) );
+//                        selected.setBehaviour( new Arrive( tank, "ui.target" , "rotParam", "velocity" ) );
+                        //                        selected.setBehaviour( new MoveTo( tank, "ui.target" , "rotParam" , "velocity" ) );
+                        //                        selected.setBehaviour( new SeekAndDestroy( tank ) );
                     }
                     else if ( isRightButton( e ) )
                     {
@@ -146,6 +153,13 @@ public class GameScreen extends JFrame {
             addMouseMotionListener( adapter );
             addMouseListener( adapter );
         }
+
+        private final DecimalFormat DF = new DecimalFormat("###0.0#");
+
+        private String format(Vector3 v) {
+            return "("+DF.format(v.x)+" , "+DF.format(v.y)+")";
+        }
+
         @Override
         protected void paintComponent(Graphics g)
         {
@@ -178,12 +192,16 @@ public class GameScreen extends JFrame {
             int y = 15;
             if ( selected != null )
             {
-            	gfx.drawString( "Selected: "+selected ,  15 , y );
-            	y += 15;
+                final float angle = Misc.angleY( selected.getOrientation() )*Misc.TO_DEG;
+                final MoveableEntity e = (MoveableEntity) selected;
+                final String acc = DF.format( e.getAcceleration() );
+                final String s = "Selected: "+selected.type+" #"+selected.id+" @ "+format(selected.position)+" ( "+DF.format( angle )+"° , acc: "+acc+" )";
+                gfx.drawString( s  ,  15 , y );
+                y += 15;
 
-            	final float distance = selected.dst( viewToModel( mousePos ) );
-            	gfx.drawString( "Distance: "+distance,  15 , y );
-            	y += 15;
+                final float distance = selected.dst( viewToModel( mousePos ) );
+                gfx.drawString( "Distance: "+distance,  15 , y );
+                y += 15;
             }
 
             // draw  score
@@ -191,11 +209,11 @@ public class GameScreen extends JFrame {
             final Color old = gfx.getColor();
             for ( int x = 15, i = 0 ; i < teams.size() ; i++ )
             {
-            	final Player team = teams.get(i);
-            	gfx.setColor( team.color );
-            	final String s = team.getName()+" : "+team.getEntityCount()+( (i+1) < teams.size() ? " | " : "");
-            	gfx.drawString( s ,  x , y );
-            	x += gfx.getFontMetrics().getStringBounds( s , gfx ).getWidth();
+                final Player team = teams.get(i);
+                gfx.setColor( team.color );
+                final String s = team.getName()+" : "+team.getEntityCount()+( (i+1) < teams.size() ? " | " : "");
+                gfx.drawString( s ,  x , y );
+                x += gfx.getFontMetrics().getStringBounds( s , gfx ).getWidth();
             }
             gfx.setColor( old );
             y += 15;
@@ -206,7 +224,7 @@ public class GameScreen extends JFrame {
             previousTime = now;
             frameCounter++;
             final float fps = frameCounter/totalFrameTime;
-          	gfx.drawString( "FPS: "+fps,  15 , y );
+            gfx.drawString( "FPS: "+fps,  15 , y );
             y += 15;
         }
 
@@ -236,45 +254,52 @@ public class GameScreen extends JFrame {
 
         private void renderBlackboard(Tank entity,Graphics2D gfx)
         {
-        	final Point pos = modelToView( entity.position );
+            final Point pos = modelToView( entity.position );
 
-        	// render orientation
-        	final Vector3 output = new Vector3();
-			Misc.setToRotatedUnitVector( output , Misc.angleY( entity.getOrientation() ) );
+            // render orientation
+            final Vector3 output = new Vector3();
+            Misc.setToRotatedUnitVector( output , Misc.angleY( entity.getOrientation() ) );
 
-			output.scl( 15 );
-			output.add( entity.position );
+            output.scl( 15 );
+            output.add( entity.position );
 
-			Point p1 = modelToView( output );
+            Point p1 = modelToView( output );
 
-			gfx.setColor( Color.GREEN );
-			gfx.drawLine( pos.x , pos.y , p1.x , p1.y );
+            gfx.setColor( Color.MAGENTA );
+            gfx.drawLine( pos.x , pos.y , p1.x , p1.y );
 
-			// render velocity
-			output.set( entity.velocity );
-			output.nor();
-			output.scl( 15 );
-			output.add( entity.position );
+            // render velocity
+            output.set( entity.velocity );
+            output.nor();
+            output.scl( 15 );
+            output.add( entity.position );
 
-			p1 = modelToView( output );
+            p1 = modelToView( output );
 
-			gfx.setColor( Color.PINK );
-			gfx.drawLine( pos.x , pos.y , p1.x , p1.y );
+            gfx.setColor( Color.BLUE);
+            gfx.drawLine( pos.x , pos.y , p1.x , p1.y );
+
+            // render acceleration
+            output.set( entity.getOrientation() );
+            output.scl( entity.getAcceleration() );
+            output.scl( 5 );
+            output.add( entity.position );
+
+            p1 = modelToView( output );
+
+            gfx.setColor( Color.RED );
+            gfx.drawLine( pos.x , pos.y , p1.x , p1.y );
+
         }
 
         private void renderTank(Tank entity,Graphics2D gfx)
         {
-        	final float angleRad;
-        	if ( entity.isMoving() ) {
-        		angleRad = Misc.angleY( entity.velocity );
-        	} else {
-        		angleRad = Misc.angleY( entity.getOrientation() );
-        	}
+            final float angleRad = Misc.angleY( entity.getOrientation() );
 
             final float tankWidth = entity.getWidth();
-			final float tankHeight = entity.getHeight();
+            final float tankHeight = entity.getHeight();
 
-			final Vector3 corner0 = new Vector3( -tankWidth/2 ,  tankHeight/2 , 0 );
+            final Vector3 corner0 = new Vector3( -tankWidth/2 ,  tankHeight/2 , 0 );
             final Vector3 corner1 = new Vector3(  tankWidth/2 ,  tankHeight/2 , 0 );
             final Vector3 corner2 = new Vector3(  tankWidth/2 , -tankHeight/2 , 0 );
             final Vector3 corner3 = new Vector3( -tankWidth/2 , -tankHeight/2 , 0 );
@@ -323,7 +348,7 @@ public class GameScreen extends JFrame {
             final int viewPosY = (int) (centerY - entity.position.y);
 
             if ( DEBUG_RENDER_SEEK_RANGE ) {
-            	drawCircle( viewPosX , viewPosY , (int) Tank.SEEK_RANGE , gfx );
+                drawCircle( viewPosX , viewPosY , (int) Tank.SEEK_RANGE , gfx );
             }
 
             // draw bounds
@@ -331,51 +356,51 @@ public class GameScreen extends JFrame {
 
             // draw turret
             gfx.drawLine( viewPosX  ,
-                          viewPosY,
-                          (int) (centerX + turretHead.x) ,
-                          (int) (centerY - turretHead.y) );
+                    viewPosY,
+                    (int) (centerX + turretHead.x) ,
+                    (int) (centerY - turretHead.y) );
 
             // draw turret range
             if ( DEBUG_RENDER_TURRET_RANGE ) {
-            	gfx.setColor( Color.YELLOW );
-            	drawCircle( viewPosX , viewPosY , (int) Tank.TURRET_RANGE , gfx );
+                gfx.setColor( Color.YELLOW );
+                drawCircle( viewPosX , viewPosY , (int) Tank.TURRET_RANGE , gfx );
             }
 
             if ( DEBUG_RENDER_WHISKERS )
             {
-            	final Vector3 tmp = new Vector3();
-            	final float currentOrientation = entity.getOrientationInRad() ;
+                final Vector3 tmp = new Vector3();
+                final float currentOrientation = entity.getOrientationInRad() ;
 
-            	// draw center whisker
-            	Misc.setToRotatedUnitVector( tmp , currentOrientation );
+                // draw center whisker
+                Misc.setToRotatedUnitVector( tmp , currentOrientation );
 
-            	tmp.scl( entity.getWhiskerConfiguration().centerRayLen ).add( entity.position );
-            	Point p = modelToView( tmp );
+                tmp.scl( entity.getWhiskerConfiguration().centerRayLen ).add( entity.position );
+                Point p = modelToView( tmp );
 
-            	gfx.setColor(Color.CYAN);
-            	gfx.drawLine( viewPosX , viewPosY , p.x ,p.y );
+                gfx.setColor(Color.CYAN);
+                gfx.drawLine( viewPosX , viewPosY , p.x ,p.y );
 
-            	// draw left whisker
-            	Misc.setToRotatedUnitVector( tmp , currentOrientation + entity.getWhiskerConfiguration().whiskerAngleDeg*Misc.TO_RAD );
+                // draw left whisker
+                Misc.setToRotatedUnitVector( tmp , currentOrientation + entity.getWhiskerConfiguration().whiskerAngleDeg*Misc.TO_RAD );
 
-            	tmp.scl( entity.getWhiskerConfiguration().whiskerRayLen ).add( entity.position );
-            	p = modelToView( tmp );
+                tmp.scl( entity.getWhiskerConfiguration().whiskerRayLen ).add( entity.position );
+                p = modelToView( tmp );
 
-            	gfx.setColor(Color.MAGENTA);
-            	gfx.drawLine( viewPosX , viewPosY , p.x ,p.y );
+                gfx.setColor(Color.MAGENTA);
+                gfx.drawLine( viewPosX , viewPosY , p.x ,p.y );
 
-            	// draw right whisker
-            	Misc.setToRotatedUnitVector( tmp , currentOrientation - entity.getWhiskerConfiguration().whiskerAngleDeg*Misc.TO_RAD );
+                // draw right whisker
+                Misc.setToRotatedUnitVector( tmp , currentOrientation - entity.getWhiskerConfiguration().whiskerAngleDeg*Misc.TO_RAD );
 
-            	tmp.scl( entity.getWhiskerConfiguration().whiskerRayLen ).add( entity.position );
-            	p = modelToView( tmp );
+                tmp.scl( entity.getWhiskerConfiguration().whiskerRayLen ).add( entity.position );
+                p = modelToView( tmp );
 
-            	gfx.setColor(Color.MAGENTA);
-            	gfx.drawLine( viewPosX , viewPosY , p.x ,p.y );
+                gfx.setColor(Color.MAGENTA);
+                gfx.drawLine( viewPosX , viewPosY , p.x ,p.y );
             }
 
             if ( DEBUG_RENDER_BLACKBOARD ) {
-            	renderBlackboard( entity , gfx);
+                renderBlackboard( entity , gfx);
             }
         }
 

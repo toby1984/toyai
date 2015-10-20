@@ -51,42 +51,36 @@ public final class AvoidObstacle extends AbstractBehaviour
 		        return rotate.tick(deltaSeconds, blackboard);
 			case 0b001: // right whisker => turn left (counter-clockwise)
 				angleDeviation = -rotInRad;
-				LOG.log("Obstacle right");
 				break;
 			case 0b010: // center whisker => turn left (counter-clockwise)
 				angleDeviation = -rotInRad;
-				LOG.log("Obstacle center");
 				break;
 			case 0b011: // right + center whisker => turn left (counter-clockwise)
 				angleDeviation = -rotInRad;
-				LOG.log("Obstacle right + center");
 				break;
 			case 0b100: // left whisker => turn right (clockwise)
 				angleDeviation = rotInRad;
 				break;
 			case 0b101: // left + right whisker ... the question is: do we fit into the hole ??
-				LOG.log("Obstacle left + right");
 				break; // do nothing, we'll assume we fit into the hole...
 			case 0b110: // left + center whisker => turn right
-				LOG.log("Obstacle left + center");
 				angleDeviation = rotInRad;
 				break;
 			case 0b111:
-				LOG.log("Obstacle left + center + right");
 				angleDeviation = rotInRad;
 				break;
 			default:
 				throw new RuntimeException("Unreachable code reached");
 		}
+		
+        Vector3 rot = blackboard.getVector3( rotParam );
+        if ( rot == null ) {
+            rot = new Vector3();
+            blackboard.put( rotParam , rot );
+        }		
 
 		if ( angleDeviation != 0 )
 		{
-	        Vector3 rot = blackboard.getVector3( rotParam );
-	        if ( rot == null ) {
-	            rot = new Vector3();
-	            blackboard.put( rotParam , rot );
-	        }
-
 			float newAngle = Misc.angleY( entity.getOrientation() ) + angleDeviation;
 			if ( newAngle > 2*Math.PI) {
 				newAngle -= 2*Math.PI;

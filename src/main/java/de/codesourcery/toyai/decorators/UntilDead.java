@@ -18,7 +18,7 @@ public class UntilDead extends AbstractBehaviour {
 
 	private Entity getTarget(IBlackboard bb)
 	{
-		return (Entity) bb.get( targetBBParam );
+		return bb.get( targetBBParam , Entity.class );
 	}
 
 	@Override

@@ -69,11 +69,6 @@ public final class Wander extends AbstractBehaviour
         timeRemaining = randomTime();
     }
 
-    private float random()
-    {
-        return rnd.nextFloat() - rnd.nextFloat();
-    }
-
     @Override
     public String toString()
     {

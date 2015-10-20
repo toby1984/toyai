@@ -9,6 +9,8 @@ public interface IBlackboard
     public Object put(String key,Object object);
 
     public Object get(String key);
+    
+    public <T> T get(String key,Class<T> clazz);
 
     public float getFloat(String key);
 

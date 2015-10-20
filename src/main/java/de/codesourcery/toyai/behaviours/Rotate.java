@@ -11,8 +11,6 @@ public final class Rotate extends AbstractBehaviour {
 
     private static final double EPSILON_ANGLE = ((2*Math.PI)/360)*0.5;
 
-    private final Vector3 tmp = new Vector3();
-
     private final MoveableEntity entity;
 
     private final String orientationVectorBBParam;
@@ -21,7 +19,7 @@ public final class Rotate extends AbstractBehaviour {
 
     public Rotate(MoveableEntity entity,String orientationVectorBBParam)
     {
-    	this(entity,orientationVectorBBParam , Entity.ROT_DEG_PER_SECOND);
+    	this(entity,orientationVectorBBParam , 15*Misc.TO_RAD );
     }
 
     public Rotate(MoveableEntity entity,String orientationVectorBBParam,float slowAdjustRadPerSecond)
@@ -47,12 +45,8 @@ public final class Rotate extends AbstractBehaviour {
     @Override
     protected Result tickHook(float deltaSeconds, IBlackboard blackboard)
     {
-        final Vector3 currentOrientation;
-        if ( entity.isMoving() ) {
-        	currentOrientation = entity.velocity;
-        } else {
-        	currentOrientation = entity.getOrientation();
-        }
+        final Vector3 currentOrientation = entity.getOrientation();
+        
         float currentAngleRad = Misc.angleY( currentOrientation );
         float desiredAngleRad = getDesiredAngleRad(blackboard);
 
@@ -60,7 +54,7 @@ public final class Rotate extends AbstractBehaviour {
 
         if ( Math.abs( deltaAngleRad ) > EPSILON_ANGLE ) // delta > 1°
         {
-            LOG.log("Angle delta: "+deltaAngleRad*Misc.TO_DEG+" @ speed "+entity.velocity.len() );
+//            LOG.log("Angle delta: "+deltaAngleRad*Misc.TO_DEG+" @ speed "+entity.velocity.len() );
 
             // determine direction to turn, always preferring
             // the smaller turn angle
@@ -83,18 +77,18 @@ public final class Rotate extends AbstractBehaviour {
             } else {
                 radPerSecond = slowAdjustRadPerSecond;
             }
-            final float coveredAngle = radPerSecond*deltaSeconds;
-
-            tmp.set( currentOrientation.x , currentOrientation.y , 0 );
+            
+            entity.setAcceleration( Entity.MAX_ACCELERATION/4f );
+            
             if ( d1 < d2 ) {
-                tmp.rotateRad( Misc.Z_AXIS3 , coveredAngle );
+                entity.rotationInRadPerSecond = radPerSecond;
             } else {
-                tmp.rotateRad( Misc.Z_AXIS3 , -coveredAngle );
+                entity.rotationInRadPerSecond = -radPerSecond;
             }
-            entity.setOrientation( tmp.x , tmp.y );
             return Result.PENDING;
         }
-        LOG.log("aligned to "+currentAngleRad*Misc.TO_DEG+"°");
+        entity.rotationInRadPerSecond  = 0;
+//        LOG.log("aligned to "+currentAngleRad*Misc.TO_DEG+"°");
         return Result.SUCCESS;
     }
 }

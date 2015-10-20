@@ -34,4 +34,17 @@ public final class Blackboard extends HashMap<String,Object> implements IBlackbo
 	{
 		return ((Number) get(key)).floatValue();
 	}
+
+    @Override
+    public <T> T get(String key, Class<T> clazz) {
+        Object value = get(key);
+        if ( value == null ) {
+            return (T) value;
+        }
+        try {
+            return clazz.cast( value );
+        } catch(ClassCastException ex) {
+            throw new RuntimeException("Blackboard parameter '"+key+"' is not a "+clazz.getSimpleName()+" but "+value);
+        }
+    }
 }

@@ -13,6 +13,7 @@ public final class Kinematics
 	private static final int INITIAL_ARRAY_SIZE = 10;
 
 	private final Vector3 tmp = new Vector3();
+	private final Vector3 tmp2 = new Vector3();
 	private final Vector3 tmpV = new Vector3();
 	private final Vector3 tmpPos = new Vector3();
 	private MoveableEntity[] entities = new MoveableEntity[INITIAL_ARRAY_SIZE];
@@ -78,18 +79,27 @@ public final class Kinematics
 
 	private void tick(MoveableEntity entity,float deltaSeconds)
 	{
-		final Vector3 orientation = entity.getOrientation();
-		tmp.set( orientation );
-		tmp.scl( entity.getAcceleration() );
-
-		tmpV.x = entity.velocity.x + tmp.x*deltaSeconds;
-		tmpV.y = entity.velocity.y + tmp.y*deltaSeconds;
-
-		tmpV.limit( entity.maxVelocity );
-
-		tmpPos.x = entity.position.x + tmpV.x * deltaSeconds;
-		tmpPos.y = entity.position.y + tmpV.y * deltaSeconds;
-
+	    // update position
+		tmpPos.x = entity.position.x + entity.velocity.x * deltaSeconds;
+		tmpPos.y = entity.position.y + entity.velocity.y * deltaSeconds;
+			
+        // update orientation
+        float rot = entity.rotationInRadPerSecond*deltaSeconds;
+        final Vector3 orientation = entity.getOrientation();
+        orientation.rotateRad( Misc.Z_AXIS3 , rot );
+        orientation.nor();    
+        
+		// calculate acceleration
+        tmp.set( orientation );
+        tmp.nor();
+        tmp.scl( entity.getAcceleration() );
+        
+        tmpV.x = entity.velocity.x + tmp.x*deltaSeconds;
+        tmpV.y = entity.velocity.y + tmp.y*deltaSeconds;
+        tmpV.scl( 0.995f ); // apply some drag
+        
+        tmpV.limit( entity.maxVelocity );
+        
 		if ( CONSTRAINT_TO_GAMESCREEN )
 		{
 			final float xLimit = GameScreen.MAX_X/2;

@@ -30,7 +30,7 @@ public final class Tank extends MoveableEntity implements ITickListener
 
     public Tank(Entity owner,IBlackboard bb)
     {
-        super(EntityType.TANK, owner,bb,40f);
+        super(EntityType.TANK, owner,bb,80f);
     }
 
     @Override

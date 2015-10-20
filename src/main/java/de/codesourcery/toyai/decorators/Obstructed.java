@@ -22,7 +22,6 @@ public final class Obstructed extends AbstractBehaviour
     {
         if (getTestResult(blackboard).hasObstacle()) 
         {
-            System.out.println("=== obstacle ===");
             return Result.SUCCESS;
         }
         return Result.FAILURE;

@@ -57,30 +57,32 @@ public final class Arrive extends AbstractBehaviour
 		 * t is the time taken,
 		 * s is the distance covered.
 		 */
-		if ( dst > 2 )
+		if ( dst > 4 )
 		{
-			final float arrivalTime = 2f;
+			final float arrivalTime = 1f;
 			float velocity = dst/arrivalTime;
 			if ( velocity < 0.1 )
 			{
 				velocity = 0;
 				blackboard.put( velocityBBParam , velocity );
 				entity.stopMoving();
+				entity.rotationInRadPerSecond = 0;
 				return Result.SUCCESS;
 			}
 			if ( velocity > entity.maxVelocity )
 			{
 				velocity = entity.maxVelocity;
 			}
-			LOG.log("Setting speed: "+velocity);
+//			LOG.log("Setting speed: "+velocity);
 			blackboard.put( velocityBBParam , velocity );
 			wrapper.tick(deltaSeconds, blackboard);
 			return Result.PENDING;
 		}
+		entity.stopMoving();
+		
 		blackboard.put( velocityBBParam , 0f );
 		final Result result = wrapper.tick(deltaSeconds, blackboard);
 		if ( result == Result.SUCCESS ) {
-			entity.stopMoving();
 			return Result.SUCCESS;
 		}
 		return result;

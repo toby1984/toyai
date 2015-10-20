@@ -73,6 +73,7 @@ public abstract class Entity implements ITickListener
     public final Vector3 position = new Vector3();
 
     private final Vector3 orientation = new Vector3(0f,1f,0);
+    public float rotationInRadPerSecond = 0;
 
     public boolean boundsDirty = true;
 
@@ -119,7 +120,7 @@ public abstract class Entity implements ITickListener
     	float whiskerAngleDeg = 90.0f - (float) (Misc.TO_DEG * Math.atan2( a , b ));
     	float whiskerRayLen = (float) Math.sqrt( a*a + b*b );
 		this.whiskerConfiguration = new WhiskerConfiguration( height*2.5f , whiskerRayLen , whiskerAngleDeg );
-		System.out.println( width+"x"+height+" => "+whiskerConfiguration);
+//		System.out.println( width+"x"+height+" => "+whiskerConfiguration);
     }
 
     public final float getWidth() {
