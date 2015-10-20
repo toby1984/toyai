@@ -20,7 +20,7 @@ public final class Wander extends AbstractBehaviour
     private float timeRemaining;
     private final String rotBBParam;
     private final IBehaviour wrapper;
-    
+
     private final float minTimeUntilDirectionChange;
     private final float maxTimeUntilDirectionChange;
 
@@ -29,19 +29,19 @@ public final class Wander extends AbstractBehaviour
         if ( minTimeUntilDirectionChange > maxTimeUntilDirectionChange ) {
             throw new IllegalArgumentException();
         }
-        
+
         this.entity = entity;
         this.rotBBParam = registerParam( getId()+".rot" );
         final String obstacleParam = registerParam( getId()+".obstacle" );
-        
+
         this.minTimeUntilDirectionChange = minTimeUntilDirectionChange;
         this.maxTimeUntilDirectionChange = maxTimeUntilDirectionChange;
-        
+
         this.wrapper = new DetectObstacle(entity, obstacleParam, new AvoidObstacle( entity , rotBBParam , obstacleParam ) );
     }
-    
+
     private float randomTime() {
-        
+
         return minTimeUntilDirectionChange+rnd.nextFloat()*(maxTimeUntilDirectionChange-minTimeUntilDirectionChange);
     }
 
@@ -90,7 +90,7 @@ public final class Wander extends AbstractBehaviour
     @Override
     protected Result tickHook(float deltaSeconds, IBlackboard blackboard)
     {
-        entity.acceleration = Entity.MAX_ACCELERATION;
+        entity.setAcceleration( Entity.MAX_ACCELERATION );
 
         if ( timeRemaining <= 0 ) {
             setRandomOrientation( blackboard );

@@ -19,6 +19,7 @@ import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 
 import de.codesourcery.toyai.Entity.EntityType;
+import de.codesourcery.toyai.behaviours.Arrive;
 import de.codesourcery.toyai.behaviours.MoveTo;
 import de.codesourcery.toyai.entities.Bullet;
 import de.codesourcery.toyai.entities.MoveableEntity;
@@ -31,6 +32,8 @@ public class GameScreen extends JFrame {
 	public static final boolean DEBUG_RENDER_TURRET_RANGE = false;
 
 	public static final boolean DEBUG_RENDER_WHISKERS = false;
+
+	public static final boolean DEBUG_RENDER_BLACKBOARD = true;
 
     public static final int MAX_X = 640;
     public static final int MAX_Y = 480;
@@ -83,7 +86,7 @@ public class GameScreen extends JFrame {
         {
             this.setFocusable(true);
             this.requestFocus();
-            
+
         	addKeyListener( new KeyAdapter()
         	{
         		@Override
@@ -117,13 +120,16 @@ public class GameScreen extends JFrame {
                     {
                         destination = viewToModel( e.getPoint() );
 
+                        final Tank tank = (Tank) selected;
+
                         selected.blackboard.put( "ui.target" , destination );
-//                        selected.setBehaviour( new ShootAt( (Tank) selected , "ui.target" ) );
-//                        selected.setBehaviour( new Wander( (MoveableEntity) selected , 3f ) );
-//                        selected.setBehaviour( new AimAt( selected , "ui.target") );
-                         
-                        selected.setBehaviour( new MoveTo( (MoveableEntity) selected , "ui.target" , "rotParam" ) );
-//                        selected.setBehaviour( new SeekAndDestroy( (Tank) selected ) );
+//                        selected.setBehaviour( new ShootAt( tank , "ui.target" ) );
+//                        selected.setBehaviour( new Wander( tank , 3f ) );
+//                        selected.setBehaviour( new AlignWith( tank , "ui.target" , "rot" ) );
+
+                        selected.setBehaviour( new Arrive( tank, "ui.target" , "rotParam", "velocity" ) );
+//                        selected.setBehaviour( new MoveTo( tank, "ui.target" , "rotParam" , "velocity" ) );
+//                        selected.setBehaviour( new SeekAndDestroy( tank ) );
                     }
                     else if ( isRightButton( e ) )
                     {
@@ -133,7 +139,7 @@ public class GameScreen extends JFrame {
                     {
                         destination = viewToModel( e.getPoint() );
                         selected.blackboard.put( "ui.target" , destination );
-                        selected.setBehaviour( new MoveTo( (MoveableEntity) selected , "ui.target" , "rotParam" ) );
+                        selected.setBehaviour( new MoveTo( (MoveableEntity) selected , "ui.target" , "rotParam" , "velocity" ) );
                     }
                 };
             };
@@ -226,6 +232,34 @@ public class GameScreen extends JFrame {
             final Player player = (Player) entity.getRootOwner();
             gfx.setColor( player.color );
             drawFilledCircle(p.x , p.y , Bullet.RADIUS , gfx );
+        }
+
+        private void renderBlackboard(Tank entity,Graphics2D gfx)
+        {
+        	final Point pos = modelToView( entity.position );
+
+        	// render orientation
+        	final Vector3 output = new Vector3();
+			Misc.setToRotatedUnitVector( output , Misc.angleY( entity.getOrientation() ) );
+
+			output.scl( 15 );
+			output.add( entity.position );
+
+			Point p1 = modelToView( output );
+
+			gfx.setColor( Color.GREEN );
+			gfx.drawLine( pos.x , pos.y , p1.x , p1.y );
+
+			// render velocity
+			output.set( entity.velocity );
+			output.nor();
+			output.scl( 15 );
+			output.add( entity.position );
+
+			p1 = modelToView( output );
+
+			gfx.setColor( Color.PINK );
+			gfx.drawLine( pos.x , pos.y , p1.x , p1.y );
         }
 
         private void renderTank(Tank entity,Graphics2D gfx)
@@ -338,7 +372,10 @@ public class GameScreen extends JFrame {
 
             	gfx.setColor(Color.MAGENTA);
             	gfx.drawLine( viewPosX , viewPosY , p.x ,p.y );
+            }
 
+            if ( DEBUG_RENDER_BLACKBOARD ) {
+            	renderBlackboard( entity , gfx);
             }
         }
 

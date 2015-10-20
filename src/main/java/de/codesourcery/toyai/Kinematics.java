@@ -80,7 +80,7 @@ public final class Kinematics
 	{
 		final Vector3 orientation = entity.getOrientation();
 		tmp.set( orientation );
-		tmp.scl( entity.acceleration );
+		tmp.scl( entity.getAcceleration() );
 
 		tmpV.x = entity.velocity.x + tmp.x*deltaSeconds;
 		tmpV.y = entity.velocity.y + tmp.y*deltaSeconds;

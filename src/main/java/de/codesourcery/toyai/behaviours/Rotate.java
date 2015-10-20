@@ -5,6 +5,7 @@ import com.badlogic.gdx.math.Vector3;
 import de.codesourcery.toyai.Entity;
 import de.codesourcery.toyai.IBlackboard;
 import de.codesourcery.toyai.Misc;
+import de.codesourcery.toyai.entities.MoveableEntity;
 
 public final class Rotate extends AbstractBehaviour {
 
@@ -12,18 +13,18 @@ public final class Rotate extends AbstractBehaviour {
 
     private final Vector3 tmp = new Vector3();
 
-    private final Entity entity;
+    private final MoveableEntity entity;
 
     private final String orientationVectorBBParam;
 
     private final float slowAdjustRadPerSecond;
 
-    public Rotate(Entity entity,String orientationVectorBBParam)
+    public Rotate(MoveableEntity entity,String orientationVectorBBParam)
     {
-    	this(entity,orientationVectorBBParam , 90*Misc.TO_RAD );
+    	this(entity,orientationVectorBBParam , Entity.ROT_DEG_PER_SECOND);
     }
 
-    public Rotate(Entity entity,String orientationVectorBBParam,float slowAdjustRadPerSecond)
+    public Rotate(MoveableEntity entity,String orientationVectorBBParam,float slowAdjustRadPerSecond)
     {
         this.entity = entity;
         this.orientationVectorBBParam = orientationVectorBBParam;
@@ -46,7 +47,12 @@ public final class Rotate extends AbstractBehaviour {
     @Override
     protected Result tickHook(float deltaSeconds, IBlackboard blackboard)
     {
-        final Vector3 currentOrientation = entity.getOrientation();
+        final Vector3 currentOrientation;
+        if ( entity.isMoving() ) {
+        	currentOrientation = entity.velocity;
+        } else {
+        	currentOrientation = entity.getOrientation();
+        }
         float currentAngleRad = Misc.angleY( currentOrientation );
         float desiredAngleRad = getDesiredAngleRad(blackboard);
 
@@ -54,6 +60,8 @@ public final class Rotate extends AbstractBehaviour {
 
         if ( Math.abs( deltaAngleRad ) > EPSILON_ANGLE ) // delta > 1°
         {
+            LOG.log("Angle delta: "+deltaAngleRad*Misc.TO_DEG+" @ speed "+entity.velocity.len() );
+
             // determine direction to turn, always preferring
             // the smaller turn angle
             final float d1;
@@ -86,7 +94,7 @@ public final class Rotate extends AbstractBehaviour {
             entity.setOrientation( tmp.x , tmp.y );
             return Result.PENDING;
         }
-        LOG.log("aligned");
+        LOG.log("aligned to "+currentAngleRad*Misc.TO_DEG+"°");
         return Result.SUCCESS;
     }
 }

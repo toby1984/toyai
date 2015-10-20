@@ -72,7 +72,7 @@ public abstract class Entity implements ITickListener
 
     public final Vector3 position = new Vector3();
 
-    private final Vector3 orientation = new Vector3(0f,1f,0).nor();
+    private final Vector3 orientation = new Vector3(0f,1f,0);
 
     public boolean boundsDirty = true;
 
@@ -149,7 +149,11 @@ public abstract class Entity implements ITickListener
         return orientation;
     }
 
-    public final void setOrientation(float x,float y) {
+    public final void setOrientation(float x,float y)
+    {
+    	if ( x == 0 && y == 0 ) {
+    		throw new RuntimeException("orientation must not be NULL");
+    	}
         this.orientation.set( x,y ,0 ).nor();
     }
 

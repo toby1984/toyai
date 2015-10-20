@@ -20,7 +20,8 @@ public final class MoveIntoRange extends AbstractBehaviour
         this.range = range*0.9f;
         this.targetBBParam = targetBBParam;
         this.moveToTargetParam = registerParam( getId()+"._target" );
-        this.moveTo = new MoveTo( entity , moveToTargetParam , rotParam );
+        final String velocityParam = registerParam( getId()+"._velocity" );
+        this.moveTo = new MoveTo( entity , moveToTargetParam , rotParam ,velocityParam );
     }
 
     private Vector3 getTarget(IBlackboard bb)

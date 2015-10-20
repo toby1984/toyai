@@ -6,6 +6,7 @@ import de.codesourcery.toyai.Entity;
 import de.codesourcery.toyai.IBlackboard;
 import de.codesourcery.toyai.Misc;
 import de.codesourcery.toyai.World.ObstacleTestResult;
+import de.codesourcery.toyai.entities.MoveableEntity;
 
 public final class AvoidObstacle extends AbstractBehaviour
 {
@@ -14,36 +15,36 @@ public final class AvoidObstacle extends AbstractBehaviour
 	private final String rotParam;
 	private final Rotate rotate;
 
-	public AvoidObstacle(Entity entity,String rotParam,String obstacleBBParam)
+	public AvoidObstacle(MoveableEntity entity,String rotParam,String obstacleBBParam)
 	{
 		this.entity = entity;
 		this.rotParam = rotParam;
 		this.obstacleBBParam = obstacleBBParam;
 		this.rotate = new Rotate( entity , rotParam );
 	}
-	
+
 	@Override
-	protected void discardHook(IBlackboard bb) 
+	protected void discardHook(IBlackboard bb)
 	{
 	    rotate.discard( bb );
 	}
-	
+
 	private ObstacleTestResult getTestResult(IBlackboard bb) {
 	    return (ObstacleTestResult) bb.get( obstacleBBParam );
 	}
-	
+
 	@Override
 	protected Result tickHook(float deltaSeconds, IBlackboard blackboard)
 	{
 		final float rotInRad = 15*Misc.TO_RAD;
 		float angleDeviation = 0;
-		
+
         /*
          * 0b111 =
          * 0b1.. = left
          * 0b.1. = center
          * 0b..1 = right
-         */		
+         */
 		switch ( getTestResult(blackboard).bitMask )
 		{
 			case 0b000: // NO OBSTACLE
@@ -77,7 +78,7 @@ public final class AvoidObstacle extends AbstractBehaviour
 			default:
 				throw new RuntimeException("Unreachable code reached");
 		}
-		
+
 		if ( angleDeviation != 0 )
 		{
 	        Vector3 rot = blackboard.getVector3( rotParam );
@@ -85,7 +86,7 @@ public final class AvoidObstacle extends AbstractBehaviour
 	            rot = new Vector3();
 	            blackboard.put( rotParam , rot );
 	        }
-	        
+
 			float newAngle = Misc.angleY( entity.getOrientation() ) + angleDeviation;
 			if ( newAngle > 2*Math.PI) {
 				newAngle -= 2*Math.PI;

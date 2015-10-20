@@ -5,6 +5,7 @@ import com.badlogic.gdx.math.Vector3;
 import de.codesourcery.toyai.Entity;
 import de.codesourcery.toyai.IBlackboard;
 import de.codesourcery.toyai.Misc;
+import de.codesourcery.toyai.entities.MoveableEntity;
 
 public final class AlignWith extends AbstractBehaviour
 {
@@ -14,7 +15,7 @@ public final class AlignWith extends AbstractBehaviour
 
     private final Rotate rotate;
 
-    public AlignWith(Entity entity,String targetToTrackBBParam,String rotationAngleBBParam)
+    public AlignWith(MoveableEntity entity,String targetToTrackBBParam,String rotationAngleBBParam)
     {
         this.targetToTrackBBParam = targetToTrackBBParam;
         this.rotationAngleBBParam = rotationAngleBBParam;
@@ -38,9 +39,10 @@ public final class AlignWith extends AbstractBehaviour
             tmp.set( destination );
         }
         tmp.sub( entity.position );
-        LOG.log("Align to "+Misc.angleY( tmp ) );
-        
         blackboard.put( rotationAngleBBParam , tmp );
+
+        LOG.log("Align to destination "+destination+" at angle "+Misc.angleY( tmp )*Misc.TO_DEG+"°" );
+
         return rotate.tick(deltaSeconds, blackboard);
     }
 

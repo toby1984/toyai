@@ -2,7 +2,6 @@ package de.codesourcery.toyai;
 
 import java.util.Collection;
 
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
 public interface IBlackboard
@@ -10,6 +9,8 @@ public interface IBlackboard
     public Object put(String key,Object object);
 
     public Object get(String key);
+
+    public float getFloat(String key);
 
     public default Vector3 getVector3(String key)
     {

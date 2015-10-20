@@ -15,8 +15,9 @@ import de.codesourcery.toyai.entities.Tank;
 public class Main
 {
     public static final float FPS = 60;
-    private static final boolean ADD_BEHAVIOURS = true;
-    private static final int BOTS_PER_TEAM = 30;
+    private static final boolean ADD_BEHAVIOURS = false;
+    private static final int BOTS_IN_TEAM1 = 1;
+    private static final int BOTS_IN_TEAM2 = 0;
 
     public static void main(String[] args)
     {
@@ -56,11 +57,15 @@ public class Main
             world.add( tank );
         };
 
-        for ( int i = 0 ; i < BOTS_PER_TEAM ; i++ )
+        for ( int i = 0 ; i < BOTS_IN_TEAM1 ; i++ )
         {
             addNewTank.accept( team1 );
-            addNewTank.accept( team2 );
             team1.incOwnedEntityCount();
+        }
+
+        for ( int i = 0 ; i < BOTS_IN_TEAM2 ; i++ )
+        {
+            addNewTank.accept( team2 );
             team2.incOwnedEntityCount();
         }
 
